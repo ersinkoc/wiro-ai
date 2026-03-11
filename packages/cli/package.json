@@ -1,0 +1,22 @@
+{
+  "name": "wiro-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "wiro": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "npx tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wiro/sdk": "*"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
