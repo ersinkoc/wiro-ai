@@ -1,4 +1,4 @@
-import { KNOWN_MODELS, MODEL_CATEGORIES, getModelRegistry } from '@wiro/sdk';
+import { KNOWN_MODELS, MODEL_CATEGORIES, getModelRegistry } from 'wiro-sdk';
 import { heading, printTable, info } from '../utils/output.js';
 
 interface ModelsOptions {

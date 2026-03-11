@@ -1,6 +1,7 @@
 {
-  "name": "@wiro/sdk",
+  "name": "wiro-sdk",
   "version": "1.0.0",
+  "description": "TypeScript SDK for Wiro AI — run AI models, manage tasks, auto-discover model parameters via OpenAPI specs",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,13 +11,35 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "npx tsc",
     "clean": "rm -rf dist"
   },
+  "keywords": [
+    "wiro",
+    "ai",
+    "sdk",
+    "openapi",
+    "image-generation",
+    "video-generation",
+    "llm",
+    "text-to-speech",
+    "text-to-image",
+    "text-to-video"
+  ],
+  "author": "Ersin KOÇ",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ersinkoc/wiro-ai.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://wiro.ai",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=18.0.0"
   }
 }

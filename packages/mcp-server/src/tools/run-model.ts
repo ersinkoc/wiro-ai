@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import type { WiroClient } from '@wiro/sdk';
-import { getModelRegistry } from '@wiro/sdk';
+import type { WiroClient } from 'wiro-sdk';
+import { getModelRegistry } from 'wiro-sdk';
 import { formatTaskResult } from '../utils/format.js';
 
 export function registerRunModel(server: McpServer, client: WiroClient): void {

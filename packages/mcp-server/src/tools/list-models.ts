@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import { KNOWN_MODELS, MODEL_CATEGORIES, getModelRegistry } from '@wiro/sdk';
+import { KNOWN_MODELS, MODEL_CATEGORIES, getModelRegistry } from 'wiro-sdk';
 import { formatModelList } from '../utils/format.js';
 
 export function registerListModels(server: McpServer): void {

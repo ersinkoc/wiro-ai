@@ -1,4 +1,4 @@
-import { WiroClient, getModelRegistry, parseOpenApiSpec } from '@wiro/sdk';
+import { WiroClient, getModelRegistry, parseOpenApiSpec } from 'wiro-sdk';
 import { heading, success, error, info } from '../utils/output.js';
 
 interface FetchSpecOptions {
