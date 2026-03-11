@@ -1,7 +1,7 @@
 {
-  "name": "wiro-sdk",
+  "name": "@wiroai/sdk",
   "version": "1.0.0",
-  "description": "TypeScript SDK for Wiro AI — run AI models, manage tasks, auto-discover model parameters via OpenAPI specs",
+  "description": "Unofficial TypeScript SDK for Wiro AI — run AI models, manage tasks, auto-discover model parameters via OpenAPI specs",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

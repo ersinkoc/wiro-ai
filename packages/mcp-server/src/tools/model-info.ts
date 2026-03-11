@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import { getModelRegistry } from 'wiro-sdk';
+import { getModelRegistry, parseModelSlug } from '@wiroai/sdk';
 import { formatModelDefinition } from '../utils/format.js';
 
 export function registerModelInfo(server: McpServer): void {
@@ -10,7 +10,7 @@ export function registerModelInfo(server: McpServer): void {
       title: 'Model Info',
       description: 'Get detailed parameter information for a specific Wiro AI model. Shows all available parameters, types, defaults, and valid options.',
       inputSchema: z.object({
-        model: z.string().describe('Model slug in owner/model format, e.g. "google/nano-banana-2"'),
+        model: z.string().describe('Model slug (e.g. "google/nano-banana-2") or Wiro URL (e.g. "https://wiro.ai/models/google/nano-banana-2")'),
       }),
       annotations: {
         readOnlyHint: true,
@@ -19,7 +19,8 @@ export function registerModelInfo(server: McpServer): void {
         openWorldHint: false,
       },
     },
-    async ({ model }) => {
+    async ({ model: rawModel }) => {
+      const model = parseModelSlug(rawModel);
       const registry = getModelRegistry();
       const def = registry.get(model);
 

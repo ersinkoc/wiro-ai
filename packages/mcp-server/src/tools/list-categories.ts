@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import { MODEL_CATEGORIES } from 'wiro-sdk';
+import { MODEL_CATEGORIES } from '@wiroai/sdk';
 
 export function registerListCategories(server: McpServer): void {
   server.registerTool(

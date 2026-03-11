@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { WiroClient, getModelRegistry } from 'wiro-sdk';
+import { WiroClient, getModelRegistry } from '@wiroai/sdk';
 import { getApiKey, getApiSecret, getOutputDir, getDefaultTimeout } from '../utils/config.js';
 import { error, success, info, createSpinner, heading } from '../utils/output.js';
 

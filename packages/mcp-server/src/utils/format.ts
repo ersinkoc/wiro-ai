@@ -1,5 +1,5 @@
-import type { TaskResult, OutputFile, TaskItem } from 'wiro-sdk';
-import type { ModelDefinition, ModelParameter } from 'wiro-sdk';
+import type { TaskResult, OutputFile, TaskItem } from '@wiroai/sdk';
+import type { ModelDefinition, ModelParameter } from '@wiroai/sdk';
 
 export function formatTaskResult(result: TaskResult): string {
   const lines: string[] = [];

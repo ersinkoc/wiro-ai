@@ -1,4 +1,4 @@
-import { connectTaskWebSocket, type OutputFile } from 'wiro-sdk';
+import { connectTaskWebSocket, type OutputFile } from '@wiroai/sdk';
 import { getApiKey, getApiSecret } from '../utils/config.js';
 import { error, success, info, createSpinner } from '../utils/output.js';
 

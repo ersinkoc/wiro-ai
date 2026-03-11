@@ -1,4 +1,4 @@
-import { WiroClient } from 'wiro-sdk';
+import { WiroClient } from '@wiroai/sdk';
 import { getApiKey, getApiSecret } from '../utils/config.js';
 import { error, success, info } from '../utils/output.js';
 

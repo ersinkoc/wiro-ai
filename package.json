@@ -1,5 +1,5 @@
 {
-  "name": "wiro",
+  "name": "@wiroai/monorepo",
   "private": true,
   "type": "module",
   "workspaces": [

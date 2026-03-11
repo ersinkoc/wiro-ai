@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import type { WiroClient } from 'wiro-sdk';
-import { getModelRegistry, parseOpenApiSpec } from 'wiro-sdk';
+import type { WiroClient } from '@wiroai/sdk';
+import { getModelRegistry, parseOpenApiSpec, parseModelSlug } from '@wiroai/sdk';
 import { formatModelDefinition } from '../utils/format.js';
 
 export function registerFetchSpec(server: McpServer, client: WiroClient): void {
@@ -11,7 +11,7 @@ export function registerFetchSpec(server: McpServer, client: WiroClient): void {
       title: 'Fetch Model Spec',
       description: 'Downloads the OpenAPI spec for a model from Wiro API and saves it locally. After fetching, the model parameters become available in wiro_model_info and validation in wiro_run_model.',
       inputSchema: z.object({
-        model: z.string().describe('Model slug in owner/model format, e.g. "openai/sora-2"'),
+        model: z.string().describe('Model slug (e.g. "openai/sora-2") or Wiro URL (e.g. "https://wiro.ai/models/openai/sora-2")'),
       }),
       annotations: {
         readOnlyHint: false,
@@ -20,8 +20,9 @@ export function registerFetchSpec(server: McpServer, client: WiroClient): void {
         openWorldHint: true,
       },
     },
-    async ({ model }) => {
+    async ({ model: rawModel }) => {
       try {
+        const model = parseModelSlug(rawModel);
         const spec = await client.fetchModelSpec(model);
         const registry = getModelRegistry();
         const filepath = registry.saveSpec(model, spec);

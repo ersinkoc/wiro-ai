@@ -10,6 +10,7 @@ import { infoCommand } from './commands/info.js';
 import { killCommand } from './commands/kill.js';
 import { cancelCommand } from './commands/cancel.js';
 import { fetchSpecCommand } from './commands/fetch-spec.js';
+import { parseModelSlug } from '@wiroai/sdk';
 
 const HELP = `
 \x1b[1m\x1b[36mWiro AI CLI\x1b[0m — Run AI models from the terminal
@@ -30,11 +31,11 @@ const HELP = `
 
 \x1b[1mEXAMPLES\x1b[0m
   wiro run google/nano-banana-pro -p "A sunset over mountains"
-  wiro run openai/sora-2 -p "A cat walking" --no-wait
+  wiro run https://wiro.ai/models/openai/sora-2 -p "A cat walking"
   wiro models --category text-to-image
+  wiro fetch-spec https://wiro.ai/models/alibaba/wan-2-6
+  wiro info alibaba/wan-2-6
   wiro status <task-token>
-  wiro watch <task-token>
-  wiro fetch-spec google/nano-banana-2
   wiro config set apiKey YOUR_KEY
 
 \x1b[1mGLOBAL OPTIONS\x1b[0m
@@ -49,13 +50,15 @@ const restArgs = process.argv.slice(3);
 
 switch (command) {
   case 'run': {
-    const model = restArgs[0];
-    if (!model || model.startsWith('-')) {
-      console.error('Usage: wiro run <owner/model> [options]');
+    const rawModel = restArgs[0];
+    if (!rawModel || rawModel.startsWith('-')) {
+      console.error('Usage: wiro run <owner/model | wiro-url> [options]');
       console.error('Example: wiro run openai/sora-2 -p "A cat playing piano"');
+      console.error('         wiro run https://wiro.ai/models/openai/sora-2 -p "test"');
       process.exitCode = 1;
       break;
     }
+    const model = parseModelSlug(rawModel);
 
     const { values } = parseArgs({
       args: restArgs.slice(1),
@@ -144,9 +147,9 @@ switch (command) {
   }
 
   case 'info': {
-    const model = restArgs[0];
-    if (!model) {
-      console.error('Usage: wiro info <owner/model>');
+    const rawInfo = restArgs[0];
+    if (!rawInfo) {
+      console.error('Usage: wiro info <owner/model | wiro-url>');
       process.exitCode = 1;
       break;
     }
@@ -155,7 +158,7 @@ switch (command) {
       options: { json: { type: 'boolean' } },
       allowPositionals: true,
     });
-    await infoCommand(model, { json: values['json'] });
+    await infoCommand(parseModelSlug(rawInfo), { json: values['json'] });
     break;
   }
 
@@ -192,10 +195,11 @@ switch (command) {
   }
 
   case 'fetch-spec': {
-    const model = restArgs[0];
-    if (!model || model.startsWith('-')) {
-      console.error('Usage: wiro fetch-spec <owner/model>');
+    const rawSpec = restArgs[0];
+    if (!rawSpec || rawSpec.startsWith('-')) {
+      console.error('Usage: wiro fetch-spec <owner/model | wiro-url>');
       console.error('Example: wiro fetch-spec google/nano-banana-2');
+      console.error('         wiro fetch-spec https://wiro.ai/models/google/nano-banana-2');
       process.exitCode = 1;
       break;
     }
@@ -204,7 +208,7 @@ switch (command) {
       options: { json: { type: 'boolean' } },
       allowPositionals: true,
     });
-    await fetchSpecCommand(model, { json: values['json'] });
+    await fetchSpecCommand(parseModelSlug(rawSpec), { json: values['json'] });
     break;
   }
 

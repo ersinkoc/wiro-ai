@@ -46,3 +46,4 @@ export type {
   ModelDefinition,
   ModelParameter,
 } from './model-registry.js';
+export { parseModelSlug } from './utils.js';

@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import type { WiroClient } from 'wiro-sdk';
+import type { WiroClient } from '@wiroai/sdk';
 import { formatTaskResult } from '../utils/format.js';
 
 export function registerTaskWait(server: McpServer, client: WiroClient): void {

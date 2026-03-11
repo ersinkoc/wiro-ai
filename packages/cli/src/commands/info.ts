@@ -1,4 +1,4 @@
-import { getModelRegistry } from 'wiro-sdk';
+import { getModelRegistry } from '@wiroai/sdk';
 import { error, heading, info, printTable } from '../utils/output.js';
 
 export async function infoCommand(model: string, options: { json?: boolean }): Promise<void> {

@@ -2,7 +2,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { WiroClient } from 'wiro-sdk';
+import { WiroClient } from '@wiroai/sdk';
 
 import { registerRunModel } from './tools/run-model.js';
 import { registerListModels } from './tools/list-models.js';

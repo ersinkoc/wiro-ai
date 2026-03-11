@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
-import type { WiroClient } from 'wiro-sdk';
-import { getModelRegistry } from 'wiro-sdk';
+import type { WiroClient } from '@wiroai/sdk';
+import { getModelRegistry, parseModelSlug } from '@wiroai/sdk';
 import { formatTaskResult } from '../utils/format.js';
 
 export function registerRunModel(server: McpServer, client: WiroClient): void {
@@ -11,7 +11,7 @@ export function registerRunModel(server: McpServer, client: WiroClient): void {
       title: 'Run Model',
       description: 'Runs an AI model on Wiro AI. Supports image generation, video generation, LLMs, audio, and more. Returns task results or a task token for async monitoring.',
       inputSchema: z.object({
-        model: z.string().describe('Model slug in owner/model format, e.g. "openai/sora-2", "google/nano-banana-pro"'),
+        model: z.string().describe('Model slug (e.g. "openai/sora-2") or Wiro URL (e.g. "https://wiro.ai/models/openai/sora-2")'),
         params: z.record(z.string(), z.unknown()).describe('Model-specific parameters as key-value pairs. Common: prompt, negativePrompt, width, height, steps, cfg_scale, seed, inputImage (base64 or URL)'),
         wait: z.boolean().default(true).describe('If true, poll task until completion and return result. If false, return task token immediately.'),
         timeout_seconds: z.number().int().min(10).max(600).default(120).describe('Max seconds to wait for task completion (only if wait=true)'),
@@ -23,8 +23,9 @@ export function registerRunModel(server: McpServer, client: WiroClient): void {
         openWorldHint: true,
       },
     },
-    async ({ model, params, wait, timeout_seconds }) => {
+    async ({ model: rawModel, params, wait, timeout_seconds }) => {
       try {
+        const model = parseModelSlug(rawModel);
         // Validate against model spec if available
         const registry = getModelRegistry();
         const validationErrors = registry.validateParams(model, params);
