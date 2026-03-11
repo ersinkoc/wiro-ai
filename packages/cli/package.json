@@ -1,6 +1,6 @@
 {
   "name": "@wiroai/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Unofficial CLI for Wiro AI — run AI models, check task status, download model specs from the terminal",
   "type": "module",
   "main": "dist/index.js",
