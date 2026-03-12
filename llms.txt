@@ -1,0 +1,54 @@
+# Wiro AI SDK
+
+> Unofficial TypeScript toolkit for Wiro AI. Run 76+ AI models (image generation, video generation, LLMs, TTS, 3D, commerce tools) from code, CLI, or AI assistants via MCP. Monorepo with three packages: @wiroai/sdk, @wiroai/cli, @wiroai/mcp-server.
+
+Wiro AI is a platform that provides a unified API for hundreds of AI models. This toolkit provides an unofficial TypeScript SDK, CLI, and MCP server for interacting with the Wiro AI API. Authentication uses HMAC-SHA256 signatures with an API key and secret from wiro.ai.
+
+The SDK includes 76 pre-bundled OpenAPI specs for instant parameter validation. Unknown models are auto-fetched on first use. The task lifecycle is: Submit → Queue → Process → Complete, with polling or WebSocket monitoring.
+
+## Docs
+
+- [README](https://github.com/ersinkoc/wiro-ai/blob/main/README.md): Full documentation with setup, usage examples, and architecture
+- [Changelog](https://github.com/ersinkoc/wiro-ai/blob/main/CHANGELOG.md): Version history and release notes
+- [@wiroai/sdk on npm](https://www.npmjs.com/package/@wiroai/sdk): Core SDK package
+- [@wiroai/cli on npm](https://www.npmjs.com/package/@wiroai/cli): CLI tool package
+- [@wiroai/mcp-server on npm](https://www.npmjs.com/package/@wiroai/mcp-server): MCP server package
+- [Wiro AI Platform](https://wiro.ai): Official platform — get API keys and browse models
+- [Wiro AI Models](https://wiro.ai/models): Browse all available models
+
+## SDK (@wiroai/sdk)
+
+- [SDK Source](https://github.com/ersinkoc/wiro-ai/tree/main/packages/sdk/src): Core TypeScript source code
+- [client.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/client.ts): WiroClient — API client with HMAC-SHA256 auth, runModel(), waitForTask(), fetchModelSpec()
+- [model-registry.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/model-registry.ts): ModelRegistry — OpenAPI spec parser, parameter validation, auto-fetch, spec caching
+- [models.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/models.ts): KNOWN_MODELS catalog — 76 models with slugs, categories, and names
+- [types.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/types.ts): TypeScript types — WiroConfig, TaskResult, ModelInfo, ModelCategory, OutputFile
+- [websocket.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/websocket.ts): WebSocket-based real-time task monitoring with callbacks
+- [utils.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/utils.ts): parseModelSlug() — accepts slugs or wiro.ai URLs
+- [errors.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/sdk/src/errors.ts): Custom errors — WiroApiError, WiroAuthError, WiroTimeoutError, WiroValidationError
+
+## CLI (@wiroai/cli)
+
+- [CLI Source](https://github.com/ersinkoc/wiro-ai/tree/main/packages/cli/src): CLI entry point and commands
+- [run.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/cli/src/commands/run.ts): `wiro run <model>` — run any model with --prompt, --no-wait, key=value params
+- [info.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/cli/src/commands/info.ts): `wiro info <model>` — show model parameters, types, defaults, examples
+- [output.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/cli/src/utils/output.ts): Terminal output utilities — tables, spinners, colored output
+
+## MCP Server (@wiroai/mcp-server)
+
+- [MCP Server Source](https://github.com/ersinkoc/wiro-ai/tree/main/packages/mcp-server/src): MCP server entry point and tool implementations
+- [index.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/mcp-server/src/index.ts): Server setup — stdio and HTTP/SSE transport, tool registration
+- [run-model.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/mcp-server/src/tools/run-model.ts): wiro_run_model — run models with OpenAPI parameter validation
+- [model-info.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/mcp-server/src/tools/model-info.ts): wiro_model_info — auto-fetch specs, show parameters and usage examples
+- [list-models.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/mcp-server/src/tools/list-models.ts): wiro_list_models — browse models by category or search
+- [format.ts](https://github.com/ersinkoc/wiro-ai/blob/main/packages/mcp-server/src/utils/format.ts): Output formatting — task results, model definitions, parameter tables
+
+## Model Specs
+
+- [models/](https://github.com/ersinkoc/wiro-ai/tree/main/models): 76 pre-bundled OpenAPI 3.0.3 specs as JSON files (openapi-{owner}-{model}.json)
+
+## Optional
+
+- [vitest.config.ts](https://github.com/ersinkoc/wiro-ai/blob/main/vitest.config.ts): Test config — 100% coverage thresholds across all packages
+- [tsconfig.base.json](https://github.com/ersinkoc/wiro-ai/blob/main/tsconfig.base.json): Shared TypeScript config — ESM, Node18+, strict mode
+- [package.json](https://github.com/ersinkoc/wiro-ai/blob/main/package.json): Monorepo root — npm workspaces for sdk, cli, mcp-server

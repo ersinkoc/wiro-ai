@@ -1,0 +1,320 @@
+# Wiro AI SDK — Full Documentation
+
+> Unofficial TypeScript toolkit for Wiro AI. Three packages: @wiroai/sdk (core), @wiroai/cli (terminal), @wiroai/mcp-server (AI assistants). 76 pre-bundled model specs with auto-fetch for unknown models.
+
+## Installation
+
+```bash
+# SDK only
+npm install @wiroai/sdk
+
+# CLI (global)
+npm install -g @wiroai/cli
+
+# MCP Server (via npx, no install needed)
+npx -y @wiroai/mcp-server
+```
+
+## Authentication
+
+All API calls use HMAC-SHA256 signatures. Get credentials at https://wiro.ai
+
+```bash
+export WIRO_API_KEY="your-api-key"
+export WIRO_API_SECRET="your-api-secret"
+```
+
+## SDK Usage (@wiroai/sdk)
+
+### WiroClient
+
+```typescript
+import { WiroClient } from '@wiroai/sdk';
+
+const client = new WiroClient({
+  apiKey: process.env.WIRO_API_KEY!,
+  apiSecret: process.env.WIRO_API_SECRET!,
+});
+```
+
+### Run a Model
+
+```typescript
+// Submit task and get task token
+const run = await client.runModel('google/nano-banana-pro', {
+  prompt: 'A cat in space',
+  aspectRatio: '16:9',
+  resolution: '2K',
+});
+// run.taskid: string — task ID
+// run.socketaccesstoken: string — token for status/wait/websocket
+
+// Wait for completion (polls until done)
+const result = await client.waitForTask(run.socketaccesstoken, {
+  timeoutSeconds: 120,    // default: 120
+  pollIntervalSeconds: 2, // default: 2
+});
+// result.id: string
+// result.status: 'task_postprocess_end' | 'task_cancel'
+// result.outputs: OutputFile[]
+// result.elapsedSeconds: string
+// result.createdAt: string
+
+// Each output file:
+// { id, name, contenttype, size, url, accesskey }
+for (const output of result.outputs) {
+  console.log(`${output.name}: ${output.url}`);
+}
+```
+
+### Task Management
+
+```typescript
+// Check task status
+const detail = await client.getTaskDetail({ tasktoken: token });
+const detailById = await client.getTaskDetailById(taskId);
+
+// Kill a running task
+await client.killTask(taskId);
+
+// Cancel a queued task
+await client.cancelTask(taskId);
+```
+
+### WebSocket Monitoring
+
+```typescript
+const unsubscribe = client.connectTaskWebSocket(token, {
+  onQueued: () => console.log('Queued...'),
+  onProcessing: () => console.log('Processing...'),
+  onCompleted: (outputs) => console.log('Done!', outputs),
+  onFailed: (error) => console.error('Failed:', error),
+  onError: (error) => console.error('WebSocket error:', error),
+});
+
+// Call unsubscribe() to disconnect
+```
+
+### Model Registry
+
+```typescript
+import { getModelRegistry } from '@wiroai/sdk';
+
+const registry = getModelRegistry();
+
+// Get model definition from bundled specs
+const model = registry.get('google/nano-banana-pro');
+
+// Auto-fetch spec if not cached
+const model = await registry.ensureSpec(client, 'some/new-model');
+
+// model.slug: string — e.g. "google/nano-banana-pro"
+// model.parameters: ModelParameter[] — all parameters
+// model.requiredParameters: string[] — required param names
+// model.name: string — display name
+// model.description: string
+// model.processingTime?: string
+
+// Each parameter:
+// { name, type, description, required, default?, enum?, format? }
+
+// Validate params before running
+const errors = registry.validateParams('google/nano-banana-pro', { prompt: 'test' });
+// Returns string[] — empty if valid
+
+// Search models
+const results = registry.search('image');
+
+// List all
+const all = registry.getAll();
+
+// Download and save spec
+const spec = await client.fetchModelSpec('owner/model');
+registry.saveSpec('owner/model', spec);
+```
+
+### Known Models (KNOWN_MODELS)
+
+```typescript
+import { KNOWN_MODELS } from '@wiroai/sdk';
+// Array of { slug: string, category: ModelCategory, name: string }
+// 76 entries across 15+ categories
+```
+
+### Model Slug Format
+
+Accepts both direct slugs and Wiro URLs:
+
+```typescript
+import { parseModelSlug } from '@wiroai/sdk';
+
+parseModelSlug('google/nano-banana-pro');                    // → "google/nano-banana-pro"
+parseModelSlug('https://wiro.ai/models/google/nano-banana-pro'); // → "google/nano-banana-pro"
+parseModelSlug('wiro.ai/models/openai/sora-2?tab=api');      // → "openai/sora-2"
+```
+
+### Error Classes
+
+```typescript
+import { WiroApiError, WiroAuthError, WiroTimeoutError, WiroValidationError } from '@wiroai/sdk';
+
+// WiroApiError — API returned non-200 (code, message)
+// WiroAuthError — missing or invalid credentials
+// WiroTimeoutError — task exceeded timeout
+// WiroValidationError — invalid input (bad slug format, etc.)
+```
+
+### Model Categories
+
+```typescript
+import { MODEL_CATEGORIES } from '@wiroai/sdk';
+// 'text-to-image' | 'image-to-image' | 'image-editing' | 'text-to-video' |
+// 'image-to-video' | 'speech-to-video' | 'talking-head' | 'text-to-speech' |
+// 'speech-to-text' | 'text-to-music' | 'text-to-song' | 'voice-clone' |
+// 'realtime-conversation' | '3d-generation' | 'text-to-3d' | 'chat' | 'llm' |
+// 'reasoning' | 'rag' | 'virtual-try-on' | 'product-ads' | 'template'
+```
+
+## CLI Usage (@wiroai/cli)
+
+```bash
+wiro run <model> [options]         # Run a model
+  --prompt, -p <text>              # Prompt text
+  --no-wait                        # Don't wait for completion
+  --timeout <seconds>              # Timeout (default: 120)
+  key=value                        # Additional parameters
+
+wiro models [options]              # List models
+  --category, -c <category>        # Filter by category
+  --search, -s <query>             # Search models
+
+wiro info <model>                  # Show model parameters
+
+wiro fetch-spec <model>            # Download OpenAPI spec
+
+wiro status <token>                # Check task status
+wiro watch <token>                 # Real-time WebSocket monitoring
+wiro kill <taskId>                 # Kill running task
+wiro cancel <taskId>               # Cancel queued task
+wiro config                        # Configure API credentials
+```
+
+## MCP Server (@wiroai/mcp-server)
+
+### Configuration
+
+```json
+{
+  "mcpServers": {
+    "wiro": {
+      "command": "npx",
+      "args": ["-y", "@wiroai/mcp-server"],
+      "env": {
+        "WIRO_API_KEY": "your-api-key",
+        "WIRO_API_SECRET": "your-api-secret"
+      }
+    }
+  }
+}
+```
+
+For HTTP/SSE transport: set `TRANSPORT=http` and optionally `PORT=3000`.
+
+### MCP Tools
+
+#### wiro_run_model
+Run any AI model with parameter validation.
+```json
+{
+  "model": "google/nano-banana-pro",
+  "params": { "prompt": "A sunset over mountains", "resolution": "2K" },
+  "wait": true,
+  "timeout_seconds": 120
+}
+```
+
+#### wiro_model_info
+Get detailed parameters for a model. Auto-fetches spec if not cached.
+```json
+{ "model": "openai/sora-2" }
+```
+
+#### wiro_list_models
+Browse available models.
+```json
+{ "category": "text-to-image", "search": "flux" }
+```
+
+#### wiro_fetch_spec
+Download and cache a model's OpenAPI spec.
+```json
+{ "model": "klingai/kling-v3" }
+```
+
+#### wiro_task_status
+Check task status by ID or token.
+```json
+{ "taskId": "1475069" }
+```
+
+#### wiro_task_wait
+Wait for task completion with timeout.
+```json
+{ "taskToken": "abc123", "timeout_seconds": 120 }
+```
+
+#### wiro_task_kill / wiro_task_cancel
+Kill a running task or cancel a queued task.
+```json
+{ "taskId": "1475069" }
+```
+
+#### wiro_list_categories
+List all model categories. No arguments.
+
+## Supported Models (76)
+
+### Text-to-Image
+google/nano-banana-pro, google/nano-banana-2, black-forest-labs/flux-2-pro, black-forest-labs/flux-2-flex, black-forest-labs/FLUX.2-klein-4B, black-forest-labs/FLUX.2-klein-9B, black-forest-labs/FLUX.2-klein-base-4B, black-forest-labs/FLUX.2-klein-base-9B, black-forest-labs/FLUX.1-Krea-dev, ByteDance/seedream-v5-lite, ByteDance/seedream-v5-lite-uncensored, ByteDance/seedream-v4-5, zai-org/GLM-IMAGE, meituan-longcat/LongCat-Image, pruna/wan-image-small, pruna/p-image, reve/Generate, Qwen/Qwen-Image, AIDC-AI/Ovis-Image-7B, xiabs/DreamOmni2, wiro/FLUX.2-dev, wiro/FLUX.2-dev-turbo
+
+### Text-to-Video
+openai/sora-2, openai/sora-2-pro, klingai/kling-v3, klingai/kling-v3-omni, klingai/kling-v2.6, klingai/kling-v2.5-turbo, ByteDance/seedance-pro-v1.5, ByteDance/seedance-pro-v1.5-uncensored, ByteDance/seedance-v1-pro-fast, alibaba/wan 2.6, pruna/p-video, PixVerse/text-to-video-v5, wiro/3D Text Animations
+
+### Image-to-Video
+lightricks/ ltx-2.3, lightricks/ ltx-2-distilled, klingai/kling-v3-motion-control, Wan-AI/Wan2.2-Animate-Animation, Wan-AI/Wan2.2-Animate-Replace
+
+### Image Editing
+FireRedTeam/FireRed-Image-Edit, meituan-longcat/LongCat-Image-Edit, decart-ai/Lucy-Edit-Dev, wiro/camera-angle-editor, wiro/InfiniteYou-flux
+
+### LLM / Chat
+google/gemini-3-pro, google/gemini-3-flash, Qwen/Qwen3.5-27B, zai-org/GLM-4.7-Flash, google/translate-gemma-4b-it, google/translate-gemma-12b-it, google/translate-gemma-27b-it, google/translate-gemma-4b-it-image, google/translate-gemma-12b-it-image, google/translate-gemma-27b-it-image, chetwinlow1/ovi, wiro/chat, wiro/rag-chat, wiro/wiroai-turkish-llm-8b, wiro/wiroai-turkish-llm-9b
+
+### Speech & Audio
+Qwen/Qwen3-TTS-12Hz-1.7B, Qwen/Qwen3-ASR-1.7B, microsoft/VibeVoice-Realtime
+
+### 3D & Panorama
+microsoft/Trellis-2, tencent/HunyuanWorld-text-to-panorama
+
+### Talking Head
+Alibaba-Quark/Live-Avatar
+
+### Commerce & Marketing
+wiro/Shopify Template, wiro/Virtual Try-On, wiro/Virtual Try-On-V2, wiro/ugc creator
+
+### HR & Recruitment
+wiro/AI-Resume-CV-Parser, wiro/AI-Resume-CV-Evaluator-JobDesc, wiro/AI-Resume-CV-Evaluator-SkillSets, wiro/AI-Resume-CV-Feedback-Generator, wiro/AI-Job-Description-Generator, wiro/AI-Culture-Fit-Test-Generator, wiro/AI-Culture-Fit-Evaluator, wiro/AI-Exit-Interview-Generator, wiro/AI-Exit-Interview-Evaluator, wiro/AI-Leave-Analysis, wiro/AI-Pulse-Survey-Analyzer
+
+### OCR
+kristaller486/dots.ocr-1.5
+
+## Architecture
+
+```
+@wiroai/sdk          Core: WiroClient, ModelRegistry, auth, types
+    |
+    +--- @wiroai/cli          Terminal: Commander.js commands
+    |
+    +--- @wiroai/mcp-server   AI Assistants: 9 MCP tools, stdio + HTTP/SSE
+```
+
+All packages are ESM-only, TypeScript, Node.js 18+. The monorepo uses npm workspaces.
