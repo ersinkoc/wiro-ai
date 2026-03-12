@@ -1,6 +1,6 @@
 # Wiro AI
 
-Unofficial TypeScript toolkit for [Wiro AI](https://wiro.ai) — run 58+ AI models (image generation, video generation, LLMs, TTS, 3D, and more) from your code, CLI, or AI assistants via MCP.
+Unofficial TypeScript toolkit for [Wiro AI](https://wiro.ai) — run 76+ AI models (image generation, video generation, LLMs, TTS, 3D, HR tools, and more) from your code, CLI, or AI assistants via MCP.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-green)](https://nodejs.org)
@@ -24,19 +24,21 @@ Unofficial TypeScript toolkit for [Wiro AI](https://wiro.ai) — run 58+ AI mode
 
 ## Supported Models
 
-58 models with pre-bundled OpenAPI specs for instant parameter validation and discovery:
+76 models with pre-bundled OpenAPI specs for instant parameter validation and discovery:
 
 | Category | Models |
 |----------|--------|
-| **Text-to-Image** | FLUX.2 Pro, FLUX.2 Klein (4B/9B), FLUX.1 Krea, Seedream V5, Nano Banana 2/Pro, Qwen Image, GLM Image, LongCat, Reve, DreamOmni2, P-Image, Ovis 7B |
-| **Text-to-Video** | Sora 2/Pro, Kling V3/V2.6/V2.5 Turbo, Seedance Pro V1.5, Wan 2.6, PixVerse V5, P-Video |
+| **Text-to-Image** | FLUX.2 Pro/Dev/Turbo, FLUX.2 Klein (4B/9B), FLUX.1 Krea, Seedream V5/V4.5, Nano Banana 2/Pro, Qwen Image, GLM Image, LongCat, Reve, DreamOmni2, P-Image, Ovis 7B |
+| **Text-to-Video** | Sora 2/Pro, Kling V3/V2.6/V2.5 Turbo, Seedance Pro V1.5, Wan 2.6, PixVerse V5, P-Video, 3D Text Animations |
 | **Image-to-Video** | LTX 2.3, Kling V3 Motion Control, Wan 2.2 Animate |
-| **Image Editing** | FireRed Image Edit, LongCat Image Edit, Lucy Edit |
-| **LLM / Chat** | Gemini 3 Pro/Flash, Qwen 3.5 27B, GLM 4.7 Flash |
+| **Image Editing** | FireRed Image Edit, LongCat Image Edit, Lucy Edit, Camera Angle Editor, InfiniteYou FLUX |
+| **LLM / Chat** | Gemini 3 Pro/Flash, Qwen 3.5 27B, GLM 4.7 Flash, WiroAI Turkish LLM 8B/9B, Wiro Chat, RAG Chat |
 | **Translation** | Translate Gemma (4B/12B/27B) with image support |
 | **Speech** | Qwen3 TTS, Qwen3 ASR, VibeVoice Realtime |
 | **3D / Panorama** | Trellis 2, HunyuanWorld Panorama |
 | **Talking Head** | Live Avatar |
+| **Commerce** | Shopify Template Generator, Virtual Try-On V1/V2, UGC Creator |
+| **HR / Recruitment** | Resume Parser, Resume Evaluator, Job Description Generator, Culture Fit, Exit Interview, Leave Analysis, Pulse Survey |
 | **OCR** | Dots OCR 1.5 |
 
 > Any model on [wiro.ai/models](https://wiro.ai/models) can be used — specs are auto-fetched on first use if not bundled.

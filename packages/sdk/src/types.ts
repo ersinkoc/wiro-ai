@@ -148,8 +148,12 @@ export const MODEL_CATEGORIES = [
   'voice-clone',
   'realtime-conversation',
   '3d-generation',
+  'text-to-3d',
   'chat',
   'llm',
   'reasoning',
   'rag',
+  'virtual-try-on',
+  'product-ads',
+  'template',
 ] as const;

@@ -1,0 +1,2082 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "wiro/ugc creator API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Wiro AI",
+      "url": "https://wiro.ai"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.wiro.ai/v1",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Run Task",
+      "description": "Execute AI model tasks"
+    },
+    {
+      "name": "Task Management",
+      "description": "Monitor, cancel, and kill tasks"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
+    }
+  ],
+  "paths": {
+    "/Task/Detail": {
+      "post": {
+        "summary": "Get Task Detail",
+        "description": "Retrieve the current status and output of a task using taskid, tasktoken, or uuid.",
+        "operationId": "getTaskDetail",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDetailRequest"
+              },
+              "examples": {
+                "byTaskId": {
+                  "summary": "Get task by ID",
+                  "value": {
+                    "taskid": "420206"
+                  }
+                },
+                "byTaskToken": {
+                  "summary": "Get task by token",
+                  "value": {
+                    "tasktoken": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+                  }
+                },
+                "byTaskIdWithUuid": {
+                  "summary": "Get task by ID with UUID",
+                  "value": {
+                    "taskid": "420206",
+                    "uuid": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                },
+                "example": {
+                  "total": "1",
+                  "errors": [],
+                  "tasklist": [
+                    {
+                      "id": "420206",
+                      "uuid": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4",
+                      "socketaccesstoken": "qMmK1O5VEpM6iD86siXvoxZCginGFl",
+                      "parameters": {
+                        "voice": "marin",
+                        "system_instructions": "You are a helpful voice assistant."
+                      },
+                      "status": "task_postprocess_end",
+                      "starttime": "1770686437",
+                      "endtime": "1770686482",
+                      "elapsedseconds": "50.0000",
+                      "outputs": [],
+                      "size": "0"
+                    }
+                  ],
+                  "result": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid signature or API key"
+          }
+        }
+      }
+    },
+    "/Task/Kill": {
+      "post": {
+        "summary": "Kill Running Task",
+        "description": "Forcefully terminate a running task.",
+        "operationId": "killTask",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskKillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task killed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Task/Cancel": {
+      "post": {
+        "summary": "Cancel Queued Task",
+        "description": "Cancel a task that is still in the queue (not yet started).",
+        "operationId": "cancelTask",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCancelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Run/wiro/ugc creator": {
+      "post": {
+        "summary": "Run UGC Creator for Product Ads",
+        "description": "Generates custom video content from product images and text for marketing campaigns.\n\n**Processing Time:** 150 seconds",
+        "operationId": "runugc creator",
+        "tags": [
+          "Run Task"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunToolSchema"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/RunToolSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunTaskResponse"
+                },
+                "example": {
+                  "errors": [],
+                  "taskid": "2221",
+                  "socketaccesstoken": "eDcCm5yyUfIvMFspTwww49OUfgXkQt",
+                  "result": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid signature or API key"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
+      }
+    },
+    "schemas": {
+      "RunTaskResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "Indicates if the request was successful",
+            "example": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "List of error messages (empty on success)",
+            "example": []
+          },
+          "taskid": {
+            "type": "string",
+            "description": "Unique task identifier for polling status",
+            "example": "420206"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Token for WebSocket connection or alternative task lookup",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          }
+        }
+      },
+      "TaskKillRequest": {
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID to kill",
+            "example": "420206"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Socket access token (alternative to taskid)",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          }
+        },
+        "description": "Provide either taskid or socketaccesstoken to identify the task"
+      },
+      "TaskCancelRequest": {
+        "type": "object",
+        "required": [
+          "taskid"
+        ],
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID to cancel (must be in queue)",
+            "example": "420206"
+          }
+        }
+      },
+      "TaskDetailRequest": {
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID returned from Run endpoint",
+            "example": "420206"
+          },
+          "tasktoken": {
+            "type": "string",
+            "description": "Socket access token (alternative to taskid)",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User UUID (optional). Use 'me' for current user or specific UUID for admin access",
+            "example": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+          }
+        },
+        "description": "Provide either taskid or tasktoken to identify the task"
+      },
+      "TaskDetailResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "string",
+            "description": "Total number of tasks returned",
+            "example": "1"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "List of error messages (empty on success)",
+            "example": []
+          },
+          "tasklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskObject"
+            },
+            "description": "Array of task objects"
+          },
+          "result": {
+            "type": "boolean",
+            "description": "Indicates if the request was successful",
+            "example": true
+          }
+        }
+      },
+      "TaskObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "420206"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User unique identifier",
+            "example": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Socket access token for WebSocket connections",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Input parameters used for this task",
+            "additionalProperties": true
+          },
+          "debugoutput": {
+            "type": "string",
+            "description": "Debug output from task execution"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current task status",
+            "enum": [
+              "task_queue",
+              "task_accept",
+              "task_assign",
+              "task_preprocess_start",
+              "task_preprocess_end",
+              "task_start",
+              "task_output",
+              "task_postprocess_end",
+              "task_cancel"
+            ],
+            "example": "task_postprocess_end"
+          },
+          "starttime": {
+            "type": "string",
+            "description": "Unix timestamp when task started",
+            "example": "1770686437"
+          },
+          "endtime": {
+            "type": "string",
+            "description": "Unix timestamp when task ended",
+            "example": "1770686482"
+          },
+          "elapsedseconds": {
+            "type": "string",
+            "description": "Total elapsed time in seconds",
+            "example": "50.0000"
+          },
+          "createtime": {
+            "type": "string",
+            "description": "Unix timestamp when task was created",
+            "example": "1770686431"
+          },
+          "canceltime": {
+            "type": "string",
+            "description": "Unix timestamp when task was cancelled",
+            "example": "0"
+          },
+          "assigntime": {
+            "type": "string",
+            "description": "Unix timestamp when task was assigned to worker",
+            "example": "1770686433"
+          },
+          "accepttime": {
+            "type": "string",
+            "description": "Unix timestamp when task was accepted",
+            "example": "1770686432"
+          },
+          "preprocessstarttime": {
+            "type": "string",
+            "description": "Unix timestamp when preprocessing started",
+            "example": "1770686432"
+          },
+          "preprocessendtime": {
+            "type": "string",
+            "description": "Unix timestamp when preprocessing ended",
+            "example": "1770686433"
+          },
+          "postprocessstarttime": {
+            "type": "string",
+            "description": "Unix timestamp when postprocessing started",
+            "example": "1770686482"
+          },
+          "postprocessendtime": {
+            "type": "string",
+            "description": "Unix timestamp when postprocessing ended",
+            "example": "1770686483"
+          },
+          "cps": {
+            "type": "string",
+            "description": "Cost per second",
+            "example": "0.000950000000"
+          },
+          "totalcost": {
+            "type": "string",
+            "description": "Total cost of the task",
+            "example": "0.046841600000"
+          },
+          "guestid": {
+            "type": "string",
+            "description": "Guest ID if task was run by guest user"
+          },
+          "projectid": {
+            "type": "string",
+            "description": "Project ID associated with the task",
+            "example": "0"
+          },
+          "modelid": {
+            "type": "string",
+            "description": "Model ID used for the task",
+            "example": "1656"
+          },
+          "basemodelid": {
+            "type": "string",
+            "description": "Base model ID",
+            "example": "0"
+          },
+          "runtype": {
+            "type": "string",
+            "description": "Type of run (e.g., model, base)",
+            "example": "model"
+          },
+          "modelfolderid": {
+            "type": "string",
+            "description": "Model folder ID"
+          },
+          "modelfileid": {
+            "type": "string",
+            "description": "Model file ID"
+          },
+          "callbackurl": {
+            "type": "string",
+            "description": "Callback URL for task completion webhook"
+          },
+          "marketplaceid": {
+            "type": "string",
+            "description": "Marketplace ID if applicable"
+          },
+          "pexit": {
+            "type": "string",
+            "description": "Process exit code",
+            "example": "0"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Task categories",
+            "example": [
+              "tool",
+              "partner",
+              "price-list",
+              "realtime"
+            ]
+          },
+          "estimatedvram": {
+            "type": "string",
+            "description": "Estimated VRAM usage",
+            "example": "0.0000"
+          },
+          "realvram": {
+            "type": "string",
+            "description": "Actual VRAM usage (JSON string)",
+            "example": "[]"
+          },
+          "isapp": {
+            "type": "boolean",
+            "description": "Whether task is from an app",
+            "example": false
+          },
+          "slugapp": {
+            "type": "string",
+            "description": "App slug if isapp is true"
+          },
+          "dynamicprice": {
+            "type": "string",
+            "description": "Dynamic pricing configuration (JSON string)"
+          },
+          "outputs": {
+            "type": "array",
+            "description": "Output files generated by the task",
+            "items": {
+              "$ref": "#/components/schemas/OutputFile"
+            }
+          },
+          "size": {
+            "type": "string",
+            "description": "Total output size in bytes",
+            "example": "0"
+          },
+          "modeldescription": {
+            "type": "string",
+            "description": "Description of the model used",
+            "example": "gpt-realtime"
+          },
+          "modelslugowner": {
+            "type": "string",
+            "description": "Owner slug of the model",
+            "example": "openai"
+          },
+          "modelslugproject": {
+            "type": "string",
+            "description": "Project slug of the model",
+            "example": "gpt-realtime"
+          }
+        }
+      },
+      "OutputFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "File ID",
+            "example": "6bc392c93856dfce3a7d1b4261e15af3"
+          },
+          "name": {
+            "type": "string",
+            "description": "File name",
+            "example": "output.mp4"
+          },
+          "contenttype": {
+            "type": "string",
+            "description": "MIME type",
+            "example": "video/mp4"
+          },
+          "size": {
+            "type": "string",
+            "description": "File size in bytes",
+            "example": "202472"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "CDN URL to download the output file",
+            "example": "https://cdn1.wiro.ai/6a6af820-xxxx/output.mp4"
+          },
+          "accesskey": {
+            "type": "string",
+            "description": "Access key for file",
+            "example": "dFKlMApaSgMeHKsJyaDeKrefcHahUK"
+          }
+        }
+      },
+      "RunToolSchema": {
+        "type": "object",
+        "properties": {
+          "effectType": {
+            "title": "Effect Type",
+            "description": "Required",
+            "type": "string",
+            "x-input-type": "selectwithcover",
+            "x-label": "Effect Type",
+            "default": "beauty-studio-woman+blonde+dewy",
+            "enum": [
+              "restaurant+&+cafe-kitchen-woman+bandana+chef",
+              "restaurant+&+cafe-kitchen-woman+blonde+headband",
+              "restaurant+&+cafe-kitchen-woman+brunette+bandana",
+              "restaurant+&+cafe-kitchen-woman+cap+barista",
+              "restaurant+&+cafe-kitchen-man+blonde+chef",
+              "restaurant+&+cafe-kitchen-man+wavy+barista",
+              "restaurant+&+cafe-kitchen-man+asian+chef",
+              "restaurant+&+cafe-kitchen-man+cornrows+barista",
+              "restaurant+&+cafe-cafe-woman+blonde+glasses",
+              "restaurant+&+cafe-cafe-woman+black+afro",
+              "restaurant+&+cafe-cafe-woman+redhead+wavy",
+              "restaurant+&+cafe-cafe-woman+brunette+updo",
+              "restaurant+&+cafe-cafe-woman+black+wavy",
+              "restaurant+&+cafe-cafe-man+blonde+slickedback",
+              "restaurant+&+cafe-cafe-man+wavy+brown",
+              "restaurant+&+cafe-cafe-man+platinum+sunglasses",
+              "restaurant+&+cafe-cafe-man+asian+dark",
+              "restaurant+&+cafe-cafe-man+cornrows+tattoo",
+              "restaurant+&+cafe-cafe-man+asian+green",
+              "health+&+sports-studio-man+tattoo+buzzcut+flexing",
+              "health+&+sports-studio-man+black+muscular",
+              "health+&+sports-studio-woman+brunette+wavy+headband",
+              "health+&+sports-studio-man+asian+jacket",
+              "health+&+sports-studio-woman+ginger+freckles",
+              "health+&+sports-studio-man+curly+muscular+bench",
+              "health+&+sports-studio-man+platinum+shaker+table",
+              "health+&+sports-studio-man+platinum+jacket",
+              "health+&+sports-studio-woman+platinum+curly",
+              "health+&+sports-studio-woman+blonde+ponytail",
+              "health+&+sports-studio-man+tattoo+buzzcut+flexing",
+              "health+&+sports-studio-man+black+muscular",
+              "health+&+sports-studio-woman+brunette+wavy+headband",
+              "health+&+sports-studio-man+asian+jacket",
+              "health+&+sports-studio-woman+ginger+freckles",
+              "health+&+sports-studio-man+curly+muscular+bench",
+              "health+&+sports-studio-man+platinum+shaker+table",
+              "health+&+sports-studio-man+platinum+jacket",
+              "health+&+sports-studio-woman+platinum+curly",
+              "health+&+sports-studio-woman+blonde+ponytail",
+              "health+&+sports-outdoor-woman+brunette+wavy+airport",
+              "health+&+sports-outdoor-man+mature+hiking+mountain",
+              "health+&+sports-outdoor-man+platinum+garden",
+              "health+&+sports-outdoor-man+asian+meadow",
+              "health+&+sports-outdoor-man+asian+basketball",
+              "health+&+sports-outdoor-man+mature+lounge",
+              "health+&+sports-outdoor-man+braids+hiking",
+              "health+&+sports-outdoor-woman+brunette+ponytail+park",
+              "health+&+sports-outdoor-woman+brunette+meadow",
+              "health+&+sports-outdoor-woman+redbraids+basketball",
+              "health+&+sports-outdoor-woman+afro+park",
+              "health+&+sports-outdoor-woman+redhead+straight+airport",
+              "health+&+sports-outdoor-woman+redbraids+hiking",
+              "health+&+sports-outdoor-woman+blonde+headband+meadow",
+              "health+&+sports-outdoor-woman+brunette+cap+track",
+              "health+&+sports-outdoor-man+platinum+basketball",
+              "health+&+sports-kitchen-woman+dark+wavy",
+              "health+&+sports-kitchen-woman+brunette+ponytail",
+              "health+&+sports-kitchen-woman+blonde+bun",
+              "health+&+sports-kitchen-man+asian+cap",
+              "health+&+sports-kitchen-man+dark+tiedye",
+              "health+&+sports-kitchen-man+dark+fridge",
+              "health+&+sports-kitchen-man+dark+tanktop",
+              "health+&+sports-kitchen-woman+blonde+fridge",
+              "health+&+sports-kitchen-woman+blonde+fridgepov",
+              "health+&+sports-kitchen-man+cornrows+fridge",
+              "health+&+sports-kitchen-man+braids+fridgepov",
+              "health+&+sports-gym-woman+curly+headband",
+              "health+&+sports-gym-woman+redhead+braids",
+              "health+&+sports-gym-woman+curly+boxing",
+              "health+&+sports-gym-woman+platinum+boxing",
+              "health+&+sports-gym-man+cornrows+tattoos",
+              "health+&+sports-gym-woman+platinum+sportsbra",
+              "health+&+sports-gym-woman+blonde+green",
+              "health+&+sports-gym-woman+blonde+locker",
+              "health+&+sports-gym-woman+dark+bun",
+              "health+&+sports-gym-woman+brunette+freckles",
+              "health+&+sports-gym-woman+dark+locker",
+              "health+&+sports-gym-woman+redhead+freckles",
+              "health+&+sports-car-woman+blonde+freckles",
+              "health+&+sports-car-woman+blonde+braid",
+              "health+&+sports-car-man+dark+tanktop",
+              "health+&+sports-car-man+braids+tattoos",
+              "health+&+sports-car-woman+blonde+sunglasses",
+              "health+&+sports-car-man+twists+plaid",
+              "health+&+sports-car-woman+dark+hoodie",
+              "health+&+sports-car-man+dark+hoodie",
+              "fashion-studio-woman+dark+straight",
+              "fashion-studio-woman+redhead+tanktop",
+              "fashion-studio-woman+blonde+bangs",
+              "fashion-studio-man+curly+grey",
+              "fashion-studio-man+brown+silver",
+              "fashion-studio-woman+dark+grey",
+              "fashion-studio-woman+blonde+black",
+              "fashion-studio-woman+redhead+denim",
+              "fashion-dressingroom-woman+brunette+wavy",
+              "fashion-dressingroom-woman+redhead+freckles",
+              "fashion-dressingroom-woman+redhead+green",
+              "fashion-dressingroom-man+curly+dark",
+              "fashion-dressingroom-woman+dark+short",
+              "fashion-dressingroom-woman+blonde+black",
+              "fashion-accessories-woman+redhead+freckles",
+              "fashion-accessories-man+curly+brown",
+              "fashion-accessories-man+brown+black",
+              "fashion-accessories-woman+dark+grey",
+              "electronic-studio-man+curly+dark",
+              "electronic-studio-man+curly+white",
+              "electronic-studio-man+blonde+grey",
+              "electronic-studio-woman+redhead+white",
+              "electronic-studio-woman+redhead+navy",
+              "electronic-studio-woman+blonde+turtleneck",
+              "electronic-outdoor-man+blonde+hoodie",
+              "electronic-outdoor-man+buzzcut+sweater",
+              "electronic-outdoor-man+wavy+blue",
+              "electronic-outdoor-woman+blonde+tank",
+              "electronic-outdoor-man+wavy+sweatshirt",
+              "electronic-outdoor-man+brown+bomber",
+              "electronic-outdoor-man+curly+grey",
+              "electronic-outdoor-woman+dark+bob",
+              "electronic-outdoor-man+dark+casual",
+              "electronic-outdoor-man+curly+freckles",
+              "electronic-kitchen-man+blonde+beige",
+              "electronic-kitchen-man+curly+cardigan",
+              "electronic-kitchen-man+curly+stubble",
+              "electronic-kitchen-woman+redhead+freckles",
+              "electronic-kitchen-woman+brunette+neon",
+              "electronic-decorative-woman+dark+blue",
+              "electronic-decorative-man+curly+vneck",
+              "electronic-decorative-man+curly+sunset",
+              "electronic-decorative-man+blonde+polo",
+              "electronic-decorative-man+wavy+tan",
+              "electronic-decorative-woman+redhead+dark",
+              "electronic-decorative-woman+redhead+warm",
+              "electronic-decorative-man+brown+slat",
+              "electronic-decorative-man+brown+black",
+              "electronic-decorative-man+curly+olive",
+              "electronic-decorative-man+mature+denim",
+              "electronic-gamer-man+blonde+hoodie",
+              "electronic-gamer-man+blonde+knit",
+              "electronic-gamer-man+wavy+charcoal",
+              "electronic-gamer-man+wavy+olive",
+              "electronic-gamer-woman+redhead+black",
+              "electronic-gamer-woman+blonde+earrings",
+              "electronic-gamer-woman+dark+blue",
+              "electronic-car-woman+redhead+freckles",
+              "electronic-car-woman+brunette+bob",
+              "electronic-car-man+curly+charcoal",
+              "electronic-car-man+brown+black",
+              "electronic-car-man+dark+polo",
+              "electronic-car-man+curly+grey",
+              "electronic-car-man+blonde+blue",
+              "electronic-bathroom-woman+redhead+teal",
+              "electronic-bathroom-woman+blonde+bangs",
+              "electronic-bathroom-woman+dark+wavy",
+              "electronic-bathroom-man+curly+teal",
+              "electronic-bathroom-man+blonde+teal",
+              "electronic-bathroom-man+wavy+black",
+              "electronic-bathroom-man+dark+brush",
+              "electronic-bathroom-man+brown+led",
+              "electronic-bathroom-man+mature+navy",
+              "beauty-studio-woman+blonde+dewy",
+              "beauty-studio-woman+curly+serum",
+              "beauty-studio-woman+freckled+glasses",
+              "beauty-studio-woman+curly+orchid",
+              "beauty-studio-woman+curly+blue",
+              "beauty-studio-woman+blonde+blue",
+              "beauty-studio-woman+blonde+closeup",
+              "beauty-studio-woman+rainbow+makeup",
+              "beauty-studio-woman+blonde+glam",
+              "beauty-studio-woman+pink+fur",
+              "beauty-studio-woman+redhead+purple",
+              "beauty-studio-woman+dark+purple",
+              "beauty-studio-man+blonde+vest",
+              "beauty-studio-man+curly+chains",
+              "beauty-studio-man+bucket+colorful",
+              "beauty-studio-man+auburn+natural",
+              "beauty-studio-man+buzzcut+amber",
+              "beauty-studio-man+wavy+white",
+              "beauty-studio-man+dark+brown",
+              "beauty-dressingroom-woman+gold+rainbow",
+              "beauty-dressingroom-woman+redhead+luxury",
+              "beauty-dressingroom-woman+curly+warm",
+              "beauty-dressingroom-woman+marble+cream",
+              "beauty-dressingroom-woman+auburn+pink",
+              "beauty-dressingroom-woman+ginger+marble",
+              "beauty-dressingroom-man+taupe+gold",
+              "beauty-dressingroom-man+beige+grey",
+              "beauty-dressingroom-man+black+gold",
+              "beauty-dressingroom-man+blonde+cream",
+              "beauty-car-woman+denim+sunroof",
+              "beauty-car-woman+black+luxury",
+              "beauty-car-woman+leather+night",
+              "beauty-car-woman+blonde+night",
+              "beauty-car-woman+cognac+skyline",
+              "beauty-car-man+dark+bokeh",
+              "beauty-car-man+beige+night",
+              "beauty-car-man+silver+jacket",
+              "beauty-car-man+navy+elegant",
+              "beauty-bedroom-woman+beige+cozy",
+              "beauty-bedroom-woman+blonde+neutral",
+              "beauty-bedroom-woman+warm+lamp",
+              "beauty-bedroom-woman+white+glam",
+              "beauty-bedroom-woman+pink+cozy",
+              "beauty-bedroom-man+green+couch",
+              "beauty-bedroom-woman+white+modern",
+              "beauty-bedroom-man+beige+minimal",
+              "beauty-bathroom-woman+white+orchid",
+              "beauty-bathroom-woman+marble+vanity",
+              "beauty-bathroom-woman+teal+tiles",
+              "beauty-bathroom-woman+beige+bathtub",
+              "beauty-bathroom-woman+warm+shelves",
+              "beauty-bathroom-man+blue+tiles",
+              "beauty-bathroom-man+teal+pointing",
+              "beauty-bathroom-man+navy+selfie",
+              "beauty-bathroom-man+teal+modern",
+              "beauty-bathroom-man+gold+accents"
+            ],
+            "x-options": [
+              {
+                "value": "restaurant+&+cafe-kitchen-woman+bandana+chef",
+                "label": "woman-bandana-chef",
+                "cover": "restaurant-and-cafe-kitchen-woman-bandana-chef.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-woman+blonde+headband",
+                "label": "woman-blonde-headband",
+                "cover": "restaurant-and-cafe-kitchen-woman-blonde-headband.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-woman+brunette+bandana",
+                "label": "woman-brunette-bandana",
+                "cover": "restaurant-and-cafe-kitchen-woman-brunette-bandana.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-woman+cap+barista",
+                "label": "woman-cap-barista",
+                "cover": "restaurant-and-cafe-kitchen-woman-cap-barista.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-man+blonde+chef",
+                "label": "man-blonde-chef",
+                "cover": "restaurant-and-cafe-kitchen-man-blonde-chef.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-man+wavy+barista",
+                "label": "man-wavy-barista",
+                "cover": "restaurant-and-cafe-kitchen-man-wavy-barista.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-man+asian+chef",
+                "label": "man-asian-chef",
+                "cover": "restaurant-and-cafe-kitchen-man-asian-chef.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-kitchen-man+cornrows+barista",
+                "label": "man-cornrows-barista",
+                "cover": "restaurant-and-cafe-kitchen-man-cornrows-barista.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-woman+blonde+glasses",
+                "label": "Woman Blonde Glasses",
+                "cover": "restaurant-and-cafe-cafe-woman-blonde-glasses.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-woman+black+afro",
+                "label": "Woman Black Afro",
+                "cover": "restaurant-and-cafe-cafe-woman-black-afro.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-woman+redhead+wavy",
+                "label": "Woman Redhead Wavy",
+                "cover": "restaurant-and-cafe-cafe-woman-redhead-wavy.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-woman+brunette+updo",
+                "label": "Woman Brunette Updo",
+                "cover": "restaurant-and-cafe-cafe-woman-brunette-updo.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-woman+black+wavy",
+                "label": "Woman Black Wavy",
+                "cover": "restaurant-and-cafe-cafe-woman-black-wavy.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+blonde+slickedback",
+                "label": "Man Blonde Slickedback",
+                "cover": "restaurant-and-cafe-cafe-man-blonde-slickedback.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+wavy+brown",
+                "label": "Man Wavy Brown",
+                "cover": "restaurant-and-cafe-cafe-man-wavy-brown.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+platinum+sunglasses",
+                "label": "Man Platinum Sunglasses",
+                "cover": "restaurant-and-cafe-cafe-man-platinum-sunglasses.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+asian+dark",
+                "label": "Man Asian Dark",
+                "cover": "restaurant-and-cafe-cafe-man-asian-dark.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+cornrows+tattoo",
+                "label": "Man Cornrows Tattoo",
+                "cover": "restaurant-and-cafe-cafe-man-cornrows-tattoo.mp4"
+              },
+              {
+                "value": "restaurant+&+cafe-cafe-man+asian+green",
+                "label": "Man Asian Green",
+                "cover": "restaurant-and-cafe-cafe-man-asian-green.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+tattoo+buzzcut+flexing",
+                "label": "Man Tattoo Buzzcut Flexing",
+                "cover": "health-and-sports-studio-man-tattoo-buzzcut-flexing.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+black+muscular",
+                "label": "Man Black Muscular",
+                "cover": "health-and-sports-studio-man-black-muscular.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+brunette+wavy+headband",
+                "label": "Woman Brunette Wavy Headband",
+                "cover": "health-and-sports-studio-woman-brunette-wavy-headband.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+asian+jacket",
+                "label": "Man Asian Jacket",
+                "cover": "health-and-sports-studio-man-asian-jacket.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+ginger+freckles",
+                "label": "Woman Ginger Freckles",
+                "cover": "health-and-sports-studio-woman-ginger-freckles.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+curly+muscular+bench",
+                "label": "Man Curly Muscular Bench",
+                "cover": "health-and-sports-studio-man-curly-muscular-bench.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+platinum+shaker+table",
+                "label": "Man Platinum Shaker Table",
+                "cover": "health-and-sports-studio-man-platinum-shaker-table.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+platinum+jacket",
+                "label": "Man Platinum Jacket",
+                "cover": "health-and-sports-studio-man-platinum-jacket.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+platinum+curly",
+                "label": "Woman Platinum Curly",
+                "cover": "health-and-sports-studio-woman-platinum-curly.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+blonde+ponytail",
+                "label": "Woman Blonde Ponytail",
+                "cover": "health-and-sports-studio-woman-blonde-ponytail.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+tattoo+buzzcut+flexing",
+                "label": "Man Tattoo Buzzcut Flexing",
+                "cover": "health-and-sports-studio-man-tattoo-buzzcut-flexing.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+black+muscular",
+                "label": "Man Black Muscular",
+                "cover": "health-and-sports-studio-man-black-muscular.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+brunette+wavy+headband",
+                "label": "Woman Brunette Wavy Headband",
+                "cover": "health-and-sports-studio-woman-brunette-wavy-headband.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+asian+jacket",
+                "label": "Man Asian Jacket",
+                "cover": "health-and-sports-studio-man-asian-jacket.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+ginger+freckles",
+                "label": "Woman Ginger Freckles",
+                "cover": "health-and-sports-studio-woman-ginger-freckles.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+curly+muscular+bench",
+                "label": "Man Curly Muscular Bench",
+                "cover": "health-and-sports-studio-man-curly-muscular-bench.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+platinum+shaker+table",
+                "label": "Man Platinum Shaker Table",
+                "cover": "health-and-sports-studio-man-platinum-shaker-table.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-man+platinum+jacket",
+                "label": "Man Platinum Jacket",
+                "cover": "health-and-sports-studio-man-platinum-jacket.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+platinum+curly",
+                "label": "Woman Platinum Curly",
+                "cover": "health-and-sports-studio-woman-platinum-curly.mp4"
+              },
+              {
+                "value": "health+&+sports-studio-woman+blonde+ponytail",
+                "label": "Woman Blonde Ponytail",
+                "cover": "health-and-sports-studio-woman-blonde-ponytail.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+brunette+wavy+airport",
+                "label": "Woman Brunette Wavy Airport",
+                "cover": "health-and-sports-outdoor-woman-brunette-wavy-airport.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+mature+hiking+mountain",
+                "label": "Man Mature Hiking Mountain",
+                "cover": "health-and-sports-outdoor-man-mature-hiking-mountain.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+platinum+garden",
+                "label": "Man Platinum Garden",
+                "cover": "health-and-sports-outdoor-man-platinum-garden.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+asian+meadow",
+                "label": "Man Asian Meadow",
+                "cover": "health-and-sports-outdoor-man-asian-meadow.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+asian+basketball",
+                "label": "Man Asian Basketball",
+                "cover": "health-and-sports-outdoor-man-asian-basketball.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+mature+lounge",
+                "label": "Man Mature Lounge",
+                "cover": "health-and-sports-outdoor-man-mature-lounge.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+braids+hiking",
+                "label": "Man Braids Hiking",
+                "cover": "health-and-sports-outdoor-man-braids-hiking.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+brunette+ponytail+park",
+                "label": "Woman Brunette Ponytail Park",
+                "cover": "health-and-sports-outdoor-woman-brunette-ponytail-park.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+brunette+meadow",
+                "label": "Woman Brunette Meadow",
+                "cover": "health-and-sports-outdoor-woman-brunette-meadow.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+redbraids+basketball",
+                "label": "Woman Redbraids Basketball",
+                "cover": "health-and-sports-outdoor-woman-redbraids-basketball.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+afro+park",
+                "label": "Woman Afro Park",
+                "cover": "health-and-sports-outdoor-woman-afro-park.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+redhead+straight+airport",
+                "label": "Woman Redhead Straight Airport",
+                "cover": "health-and-sports-outdoor-woman-redhead-straight-airport.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+redbraids+hiking",
+                "label": "Woman Redbraids Hiking",
+                "cover": "health-and-sports-outdoor-woman-redbraids-hiking.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+blonde+headband+meadow",
+                "label": "Woman Blonde Headband Meadow",
+                "cover": "health-and-sports-outdoor-woman-blonde-headband-meadow.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-woman+brunette+cap+track",
+                "label": "Woman Brunette Cap Track",
+                "cover": "health-and-sports-outdoor-woman-brunette-cap-track.mp4"
+              },
+              {
+                "value": "health+&+sports-outdoor-man+platinum+basketball",
+                "label": "Man Platinum Basketball",
+                "cover": "health-and-sports-outdoor-man-platinum-basketball.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-woman+dark+wavy",
+                "label": "Woman Dark Wavy",
+                "cover": "health-and-sports-kitchen-woman-dark-wavy.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-woman+brunette+ponytail",
+                "label": "Woman Brunette Ponytail",
+                "cover": "health-and-sports-kitchen-woman-brunette-ponytail.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-woman+blonde+bun",
+                "label": "Woman Blonde Bun",
+                "cover": "health-and-sports-kitchen-woman-blonde-bun.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+asian+cap",
+                "label": "Man Asian Cap",
+                "cover": "health-and-sports-kitchen-man-asian-cap.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+dark+tiedye",
+                "label": "Man Dark Tiedye",
+                "cover": "health-and-sports-kitchen-man-dark-tiedye.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+dark+fridge",
+                "label": "Man Dark Fridge",
+                "cover": "health-and-sports-kitchen-man-dark-fridge.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+dark+tanktop",
+                "label": "Man Dark Tanktop",
+                "cover": "health-and-sports-kitchen-man-dark-tanktop.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-woman+blonde+fridge",
+                "label": "Woman Blonde Fridge",
+                "cover": "health-and-sports-kitchen-woman-blonde-fridge.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-woman+blonde+fridgepov",
+                "label": "Woman Blonde Fridgepov",
+                "cover": "health-and-sports-kitchen-woman-blonde-fridgepov.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+cornrows+fridge",
+                "label": "Man Cornrows Fridge",
+                "cover": "health-and-sports-kitchen-man-cornrows-fridge.mp4"
+              },
+              {
+                "value": "health+&+sports-kitchen-man+braids+fridgepov",
+                "label": "Man Braids Fridgepov",
+                "cover": "health-and-sports-kitchen-man-braids-fridgepov.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+curly+headband",
+                "label": "Woman Curly Headband",
+                "cover": "health-and-sports-gym-woman-curly-headband.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+redhead+braids",
+                "label": "Woman Redhead Braids",
+                "cover": "health-and-sports-gym-woman-redhead-braids.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+curly+boxing",
+                "label": "Woman Curly Boxing",
+                "cover": "health-and-sports-gym-woman-curly-boxing.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+platinum+boxing",
+                "label": "Woman Platinum Boxing",
+                "cover": "health-and-sports-gym-woman-platinum-boxing.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-man+cornrows+tattoos",
+                "label": "Man Cornrows Tattoos",
+                "cover": "health-and-sports-gym-man-cornrows-tattoos.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+platinum+sportsbra",
+                "label": "Woman Platinum Sportsbra",
+                "cover": "health-and-sports-gym-woman-platinum-sportsbra.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+blonde+green",
+                "label": "Woman Blonde Green",
+                "cover": "health-and-sports-gym-woman-blonde-green.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+blonde+locker",
+                "label": "Woman Blonde Locker",
+                "cover": "health-and-sports-gym-woman-blonde-locker.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+dark+bun",
+                "label": "Woman Dark Bun",
+                "cover": "health-and-sports-gym-woman-dark-bun.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+brunette+freckles",
+                "label": "Woman Brunette Freckles",
+                "cover": "health-and-sports-gym-woman-brunette-freckles.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+dark+locker",
+                "label": "Woman Dark Locker",
+                "cover": "health-and-sports-gym-woman-dark-locker.mp4"
+              },
+              {
+                "value": "health+&+sports-gym-woman+redhead+freckles",
+                "label": "Woman Redhead Freckles",
+                "cover": "health-and-sports-gym-woman-redhead-freckles.mp4"
+              },
+              {
+                "value": "health+&+sports-car-woman+blonde+freckles",
+                "label": "Woman Blonde Freckles",
+                "cover": "health-and-sports-car-woman-blonde-freckles.mp4"
+              },
+              {
+                "value": "health+&+sports-car-woman+blonde+braid",
+                "label": "Woman Blonde Braid",
+                "cover": "health-and-sports-car-woman-blonde-braid.mp4"
+              },
+              {
+                "value": "health+&+sports-car-man+dark+tanktop",
+                "label": "Man Dark Tanktop",
+                "cover": "health-and-sports-car-man-dark-tanktop.mp4"
+              },
+              {
+                "value": "health+&+sports-car-man+braids+tattoos",
+                "label": "Man Braids Tattoos",
+                "cover": "health-and-sports-car-man-braids-tattoos.mp4"
+              },
+              {
+                "value": "health+&+sports-car-woman+blonde+sunglasses",
+                "label": "Woman Blonde Sunglasses",
+                "cover": "health-and-sports-car-woman-blonde-sunglasses.mp4"
+              },
+              {
+                "value": "health+&+sports-car-man+twists+plaid",
+                "label": "Man Twists Plaid",
+                "cover": "health-and-sports-car-man-twists-plaid.mp4"
+              },
+              {
+                "value": "health+&+sports-car-woman+dark+hoodie",
+                "label": "Woman Dark Hoodie",
+                "cover": "health-and-sports-car-woman-dark-hoodie.mp4"
+              },
+              {
+                "value": "health+&+sports-car-man+dark+hoodie",
+                "label": "Man Dark Hoodie",
+                "cover": "health-and-sports-car-man-dark-hoodie.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+dark+straight",
+                "label": "Woman Dark Straight",
+                "cover": "fashion-studio-woman-dark-straight.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+redhead+tanktop",
+                "label": "Woman Redhead Tanktop",
+                "cover": "fashion-studio-woman-redhead-tanktop.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+blonde+bangs",
+                "label": "Woman Blonde Bangs",
+                "cover": "fashion-studio-woman-blonde-bangs.mp4"
+              },
+              {
+                "value": "fashion-studio-man+curly+grey",
+                "label": "Man Curly Grey",
+                "cover": "fashion-studio-man-curly-grey.mp4"
+              },
+              {
+                "value": "fashion-studio-man+brown+silver",
+                "label": "Man Brown Silver",
+                "cover": "fashion-studio-man-brown-silver.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+dark+grey",
+                "label": "Woman Dark Grey",
+                "cover": "fashion-studio-woman-dark-grey.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+blonde+black",
+                "label": "Woman Blonde Black",
+                "cover": "fashion-studio-woman-blonde-black.mp4"
+              },
+              {
+                "value": "fashion-studio-woman+redhead+denim",
+                "label": "Woman Redhead Denim",
+                "cover": "fashion-studio-woman-redhead-denim.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-woman+brunette+wavy",
+                "label": "Woman Brunette Wavy",
+                "cover": "fashion-dressingroom-woman-brunette-wavy.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-woman+redhead+freckles",
+                "label": "Woman Redhead Freckles",
+                "cover": "fashion-dressingroom-woman-redhead-freckles.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-woman+redhead+green",
+                "label": "Woman Redhead Green",
+                "cover": "fashion-dressingroom-woman-redhead-green.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-man+curly+dark",
+                "label": "Man Curly Dark",
+                "cover": "fashion-dressingroom-man-curly-dark.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-woman+dark+short",
+                "label": "Woman Dark Short",
+                "cover": "fashion-dressingroom-woman-dark-short.mp4"
+              },
+              {
+                "value": "fashion-dressingroom-woman+blonde+black",
+                "label": "Woman Blonde Black",
+                "cover": "fashion-dressingroom-woman-blonde-black.mp4"
+              },
+              {
+                "value": "fashion-accessories-woman+redhead+freckles",
+                "label": "Woman Redhead Freckles",
+                "cover": "fashion-accessories-woman-redhead-freckles.mp4"
+              },
+              {
+                "value": "fashion-accessories-man+curly+brown",
+                "label": "Man Curly Brown",
+                "cover": "fashion-accessories-man-curly-brown.mp4"
+              },
+              {
+                "value": "fashion-accessories-man+brown+black",
+                "label": "Man Brown Black",
+                "cover": "fashion-accessories-man-brown-black.mp4"
+              },
+              {
+                "value": "fashion-accessories-woman+dark+grey",
+                "label": "Woman Dark Grey",
+                "cover": "fashion-accessories-woman-dark-grey.mp4"
+              },
+              {
+                "value": "electronic-studio-man+curly+dark",
+                "label": "Man Curly Dark",
+                "cover": "electronic-studio-man-curly-dark.mp4"
+              },
+              {
+                "value": "electronic-studio-man+curly+white",
+                "label": "Man Curly White",
+                "cover": "electronic-studio-man-curly-white.mp4"
+              },
+              {
+                "value": "electronic-studio-man+blonde+grey",
+                "label": "Man Blonde Grey",
+                "cover": "electronic-studio-man-blonde-grey.mp4"
+              },
+              {
+                "value": "electronic-studio-woman+redhead+white",
+                "label": "Woman Redhead White",
+                "cover": "electronic-studio-woman-redhead-white.mp4"
+              },
+              {
+                "value": "electronic-studio-woman+redhead+navy",
+                "label": "Woman Redhead Navy",
+                "cover": "electronic-studio-woman-redhead-navy.mp4"
+              },
+              {
+                "value": "electronic-studio-woman+blonde+turtleneck",
+                "label": "Woman Blonde Turtleneck",
+                "cover": "electronic-studio-woman-blonde-turtleneck.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+blonde+hoodie",
+                "label": "Man Blonde Hoodie",
+                "cover": "electronic-outdoor-man-blonde-hoodie.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+buzzcut+sweater",
+                "label": "Man Buzzcut Sweater",
+                "cover": "electronic-outdoor-man-buzzcut-sweater.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+wavy+blue",
+                "label": "Man Wavy Blue",
+                "cover": "electronic-outdoor-man-wavy-blue.mp4"
+              },
+              {
+                "value": "electronic-outdoor-woman+blonde+tank",
+                "label": "Woman Blonde Tank",
+                "cover": "electronic-outdoor-woman-blonde-tank.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+wavy+sweatshirt",
+                "label": "Man Wavy Sweatshirt",
+                "cover": "electronic-outdoor-man-wavy-sweatshirt.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+brown+bomber",
+                "label": "Man Brown Bomber",
+                "cover": "electronic-outdoor-man-brown-bomber.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+curly+grey",
+                "label": "Man Curly Grey",
+                "cover": "electronic-outdoor-man-curly-grey.mp4"
+              },
+              {
+                "value": "electronic-outdoor-woman+dark+bob",
+                "label": "Woman Dark Bob",
+                "cover": "electronic-outdoor-woman-dark-bob.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+dark+casual",
+                "label": "Man Dark Casual",
+                "cover": "electronic-outdoor-man-dark-casual.mp4"
+              },
+              {
+                "value": "electronic-outdoor-man+curly+freckles",
+                "label": "Man Curly Freckles",
+                "cover": "electronic-outdoor-man-curly-freckles.mp4"
+              },
+              {
+                "value": "electronic-kitchen-man+blonde+beige",
+                "label": "Man Blonde Beige",
+                "cover": "electronic-kitchen-man-blonde-beige.mp4"
+              },
+              {
+                "value": "electronic-kitchen-man+curly+cardigan",
+                "label": "Man Curly Cardigan",
+                "cover": "electronic-kitchen-man-curly-cardigan.mp4"
+              },
+              {
+                "value": "electronic-kitchen-man+curly+stubble",
+                "label": "Man Curly Stubble",
+                "cover": "electronic-kitchen-man-curly-stubble.mp4"
+              },
+              {
+                "value": "electronic-kitchen-woman+redhead+freckles",
+                "label": "Woman Redhead Freckles",
+                "cover": "electronic-kitchen-woman-redhead-freckles.mp4"
+              },
+              {
+                "value": "electronic-kitchen-woman+brunette+neon",
+                "label": "Woman Brunette Neon",
+                "cover": "electronic-kitchen-woman-brunette-neon.mp4"
+              },
+              {
+                "value": "electronic-decorative-woman+dark+blue",
+                "label": "Woman Dark Blue",
+                "cover": "electronic-decorative-woman-dark-blue.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+curly+vneck",
+                "label": "Man Curly Vneck",
+                "cover": "electronic-decorative-man-curly-vneck.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+curly+sunset",
+                "label": "Man Curly Sunset",
+                "cover": "electronic-decorative-man-curly-sunset.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+blonde+polo",
+                "label": "Man Blonde Polo",
+                "cover": "electronic-decorative-man-blonde-polo.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+wavy+tan",
+                "label": "Man Wavy Tan",
+                "cover": "electronic-decorative-man-wavy-tan.mp4"
+              },
+              {
+                "value": "electronic-decorative-woman+redhead+dark",
+                "label": "Woman Redhead Dark",
+                "cover": "electronic-decorative-woman-redhead-dark.mp4"
+              },
+              {
+                "value": "electronic-decorative-woman+redhead+warm",
+                "label": "Woman Redhead Warm",
+                "cover": "electronic-decorative-woman-redhead-warm.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+brown+slat",
+                "label": "Man Brown Slat",
+                "cover": "electronic-decorative-man-brown-slat.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+brown+black",
+                "label": "Man Brown Black",
+                "cover": "electronic-decorative-man-brown-black.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+curly+olive",
+                "label": "Man Curly Olive",
+                "cover": "electronic-decorative-man-curly-olive.mp4"
+              },
+              {
+                "value": "electronic-decorative-man+mature+denim",
+                "label": "Man Mature Denim",
+                "cover": "electronic-decorative-man-mature-denim.mp4"
+              },
+              {
+                "value": "electronic-gamer-man+blonde+hoodie",
+                "label": "Man Blonde Hoodie",
+                "cover": "electronic-gamer-man-blonde-hoodie.mp4"
+              },
+              {
+                "value": "electronic-gamer-man+blonde+knit",
+                "label": "Man Blonde Knit",
+                "cover": "electronic-gamer-man-blonde-knit.mp4"
+              },
+              {
+                "value": "electronic-gamer-man+wavy+charcoal",
+                "label": "Man Wavy Charcoal",
+                "cover": "electronic-gamer-man-wavy-charcoal.mp4"
+              },
+              {
+                "value": "electronic-gamer-man+wavy+olive",
+                "label": "Man Wavy Olive",
+                "cover": "electronic-gamer-man-wavy-olive.mp4"
+              },
+              {
+                "value": "electronic-gamer-woman+redhead+black",
+                "label": "Woman Redhead Black",
+                "cover": "electronic-gamer-woman-redhead-black.mp4"
+              },
+              {
+                "value": "electronic-gamer-woman+blonde+earrings",
+                "label": "Woman Blonde Earrings",
+                "cover": "electronic-gamer-woman-blonde-earrings.mp4"
+              },
+              {
+                "value": "electronic-gamer-woman+dark+blue",
+                "label": "Woman Dark Blue",
+                "cover": "electronic-gamer-woman-dark-blue.mp4"
+              },
+              {
+                "value": "electronic-car-woman+redhead+freckles",
+                "label": "Woman Redhead Freckles",
+                "cover": "electronic-car-woman-redhead-freckles.mp4"
+              },
+              {
+                "value": "electronic-car-woman+brunette+bob",
+                "label": "Woman Brunette Bob",
+                "cover": "electronic-car-woman-brunette-bob.mp4"
+              },
+              {
+                "value": "electronic-car-man+curly+charcoal",
+                "label": "Man Curly Charcoal",
+                "cover": "electronic-car-man-curly-charcoal.mp4"
+              },
+              {
+                "value": "electronic-car-man+brown+black",
+                "label": "Man Brown Black",
+                "cover": "electronic-car-man-brown-black.mp4"
+              },
+              {
+                "value": "electronic-car-man+dark+polo",
+                "label": "Man Dark Polo",
+                "cover": "electronic-car-man-dark-polo.mp4"
+              },
+              {
+                "value": "electronic-car-man+curly+grey",
+                "label": "Man Curly Grey",
+                "cover": "electronic-car-man-curly-grey.mp4"
+              },
+              {
+                "value": "electronic-car-man+blonde+blue",
+                "label": "Man Blonde Blue",
+                "cover": "electronic-car-man-blonde-blue.mp4"
+              },
+              {
+                "value": "electronic-bathroom-woman+redhead+teal",
+                "label": "Woman Redhead Teal",
+                "cover": "electronic-bathroom-woman-redhead-teal.mp4"
+              },
+              {
+                "value": "electronic-bathroom-woman+blonde+bangs",
+                "label": "Woman Blonde Bangs",
+                "cover": "electronic-bathroom-woman-blonde-bangs.mp4"
+              },
+              {
+                "value": "electronic-bathroom-woman+dark+wavy",
+                "label": "Woman Dark Wavy",
+                "cover": "electronic-bathroom-woman-dark-wavy.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+curly+teal",
+                "label": "Man Curly Teal",
+                "cover": "electronic-bathroom-man-curly-teal.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+blonde+teal",
+                "label": "Man Blonde Teal",
+                "cover": "electronic-bathroom-man-blonde-teal.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+wavy+black",
+                "label": "Man Wavy Black",
+                "cover": "electronic-bathroom-man-wavy-black.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+dark+brush",
+                "label": "Man Dark Brush",
+                "cover": "electronic-bathroom-man-dark-brush.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+brown+led",
+                "label": "Man Brown Led",
+                "cover": "electronic-bathroom-man-brown-led.mp4"
+              },
+              {
+                "value": "electronic-bathroom-man+mature+navy",
+                "label": "Man Mature Navy",
+                "cover": "electronic-bathroom-man-mature-navy.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+blonde+dewy",
+                "label": "Woman Blonde Dewy",
+                "cover": "beauty-studio-woman-blonde-dewy.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+curly+serum",
+                "label": "Woman Curly Serum",
+                "cover": "beauty-studio-woman-curly-serum.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+freckled+glasses",
+                "label": "Woman Freckled Glasses",
+                "cover": "beauty-studio-woman-freckled-glasses.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+curly+orchid",
+                "label": "Woman Curly Orchid",
+                "cover": "beauty-studio-woman-curly-orchid.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+curly+blue",
+                "label": "Woman Curly Blue",
+                "cover": "beauty-studio-woman-curly-blue.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+blonde+blue",
+                "label": "Woman Blonde Blue",
+                "cover": "beauty-studio-woman-blonde-blue.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+blonde+closeup",
+                "label": "Woman Blonde Closeup",
+                "cover": "beauty-studio-woman-blonde-closeup.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+rainbow+makeup",
+                "label": "Woman Rainbow Makeup",
+                "cover": "beauty-studio-woman-rainbow-makeup.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+blonde+glam",
+                "label": "Woman Blonde Glam",
+                "cover": "beauty-studio-woman-blonde-glam.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+pink+fur",
+                "label": "Woman Pink Fur",
+                "cover": "beauty-studio-woman-pink-fur.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+redhead+purple",
+                "label": "Woman Redhead Purple",
+                "cover": "beauty-studio-woman-redhead-purple.mp4"
+              },
+              {
+                "value": "beauty-studio-woman+dark+purple",
+                "label": "Woman Dark Purple",
+                "cover": "beauty-studio-woman-dark-purple.mp4"
+              },
+              {
+                "value": "beauty-studio-man+blonde+vest",
+                "label": "Man Blonde Vest",
+                "cover": "beauty-studio-man-blonde-vest.mp4"
+              },
+              {
+                "value": "beauty-studio-man+curly+chains",
+                "label": "Man Curly Chains",
+                "cover": "beauty-studio-man-curly-chains.mp4"
+              },
+              {
+                "value": "beauty-studio-man+bucket+colorful",
+                "label": "Man Bucket Colorful",
+                "cover": "beauty-studio-man-bucket-colorful.mp4"
+              },
+              {
+                "value": "beauty-studio-man+auburn+natural",
+                "label": "Man Auburn Natural",
+                "cover": "beauty-studio-man-auburn-natural.mp4"
+              },
+              {
+                "value": "beauty-studio-man+buzzcut+amber",
+                "label": "Man Buzzcut Amber",
+                "cover": "beauty-studio-man-buzzcut-amber.mp4"
+              },
+              {
+                "value": "beauty-studio-man+wavy+white",
+                "label": "Man Wavy White",
+                "cover": "beauty-studio-man-wavy-white.mp4"
+              },
+              {
+                "value": "beauty-studio-man+dark+brown",
+                "label": "Man Dark Brown",
+                "cover": "beauty-studio-man+dark+brown.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+gold+rainbow",
+                "label": "Woman Gold Rainbow",
+                "cover": "beauty-dressingroom-woman-gold-rainbow.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+redhead+luxury",
+                "label": "Woman Redhead Luxury",
+                "cover": "beauty-dressingroom-woman-redhead-luxury.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+curly+warm",
+                "label": "Woman Curly Warm",
+                "cover": "beauty-dressingroom-woman-curly-warm.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+marble+cream",
+                "label": "Woman Marble Cream",
+                "cover": "beauty-dressingroom-woman-marble-cream.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+auburn+pink",
+                "label": "Woman Auburn Pink",
+                "cover": "beauty-dressingroom-woman-auburn-pink.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-woman+ginger+marble",
+                "label": "Woman Ginger Marble",
+                "cover": "beauty-dressingroom-woman-ginger-marble.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-man+taupe+gold",
+                "label": "Man Taupe Gold",
+                "cover": "beauty-dressingroom-man-taupe-gold.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-man+beige+grey",
+                "label": "Man Beige Grey",
+                "cover": "beauty-dressingroom-man-beige-grey.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-man+black+gold",
+                "label": "Man Black Gold",
+                "cover": "beauty-dressingroom-man-black-gold.mp4"
+              },
+              {
+                "value": "beauty-dressingroom-man+blonde+cream",
+                "label": "Man Blonde Cream",
+                "cover": "beauty-dressingroom-man-blonde-cream.mp4"
+              },
+              {
+                "value": "beauty-car-woman+denim+sunroof",
+                "label": "Woman Denim Sunroof",
+                "cover": "beauty-car-woman-denim-sunroof.mp4"
+              },
+              {
+                "value": "beauty-car-woman+black+luxury",
+                "label": "Woman Black Luxury",
+                "cover": "beauty-car-woman-black-luxury.mp4"
+              },
+              {
+                "value": "beauty-car-woman+leather+night",
+                "label": "Woman Leather Night",
+                "cover": "beauty-car-woman-leather-night.mp4"
+              },
+              {
+                "value": "beauty-car-woman+blonde+night",
+                "label": "Woman Blonde Night",
+                "cover": "beauty-car-woman-blonde-night.mp4"
+              },
+              {
+                "value": "beauty-car-woman+cognac+skyline",
+                "label": "Woman Cognac Skyline",
+                "cover": "beauty-car-woman-cognac-skyline.mp4"
+              },
+              {
+                "value": "beauty-car-man+dark+bokeh",
+                "label": "Man Dark Bokeh",
+                "cover": "beauty-car-man-dark-bokeh.mp4"
+              },
+              {
+                "value": "beauty-car-man+beige+night",
+                "label": "Man Beige Night",
+                "cover": "beauty-car-man-beige-night.mp4"
+              },
+              {
+                "value": "beauty-car-man+silver+jacket",
+                "label": "Man Silver Jacket",
+                "cover": "beauty-car-man-silver-jacket.mp4"
+              },
+              {
+                "value": "beauty-car-man+navy+elegant",
+                "label": "Man Navy Elegant",
+                "cover": "beauty-car-man-navy-elegant.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+beige+cozy",
+                "label": "Woman Beige Cozy",
+                "cover": "beauty-bedroom-woman-beige-cozy.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+blonde+neutral",
+                "label": "Woman Blonde Neutral",
+                "cover": "beauty-bedroom-woman-blonde-neutral.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+warm+lamp",
+                "label": "Woman Warm Lamp",
+                "cover": "beauty-bedroom-woman-warm-lamp.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+white+glam",
+                "label": "Woman White Glam",
+                "cover": "beauty-bedroom-woman-white-glam.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+pink+cozy",
+                "label": "Woman Pink Cozy",
+                "cover": "beauty-bedroom-woman-pink-cozy.mp4"
+              },
+              {
+                "value": "beauty-bedroom-man+green+couch",
+                "label": "Man Green Couch",
+                "cover": "beauty-bedroom-man-green-couch.mp4"
+              },
+              {
+                "value": "beauty-bedroom-woman+white+modern",
+                "label": "Woman White Modern",
+                "cover": "beauty-bedroom-woman-white-modern.mp4"
+              },
+              {
+                "value": "beauty-bedroom-man+beige+minimal",
+                "label": "Man Beige Minimal",
+                "cover": "beauty-bedroom-man-beige-minimal.mp4"
+              },
+              {
+                "value": "beauty-bathroom-woman+white+orchid",
+                "label": "Woman White Orchid",
+                "cover": "beauty-bathroom-woman-white-orchid.mp4"
+              },
+              {
+                "value": "beauty-bathroom-woman+marble+vanity",
+                "label": "Woman Marble Vanity",
+                "cover": "beauty-bathroom-woman-marble-vanity.mp4"
+              },
+              {
+                "value": "beauty-bathroom-woman+teal+tiles",
+                "label": "Woman Teal Tiles",
+                "cover": "beauty-bathroom-woman-teal-tiles.mp4"
+              },
+              {
+                "value": "beauty-bathroom-woman+beige+bathtub",
+                "label": "Woman Beige Bathtub",
+                "cover": "beauty-bathroom-woman-beige-bathtub.mp4"
+              },
+              {
+                "value": "beauty-bathroom-woman+warm+shelves",
+                "label": "Woman Warm Shelves",
+                "cover": "beauty-bathroom-woman-warm-shelves.mp4"
+              },
+              {
+                "value": "beauty-bathroom-man+blue+tiles",
+                "label": "Man Blue Tiles",
+                "cover": "beauty-bathroom-man-blue-tiles.mp4"
+              },
+              {
+                "value": "beauty-bathroom-man+teal+pointing",
+                "label": "Man Teal Pointing",
+                "cover": "beauty-bathroom-man-teal-pointing.mp4"
+              },
+              {
+                "value": "beauty-bathroom-man+navy+selfie",
+                "label": "Man Navy Selfie",
+                "cover": "beauty-bathroom-man-navy-selfie.mp4"
+              },
+              {
+                "value": "beauty-bathroom-man+teal+modern",
+                "label": "Man Teal Modern",
+                "cover": "beauty-bathroom-man-teal-modern.mp4"
+              },
+              {
+                "value": "beauty-bathroom-man+gold+accents",
+                "label": "Man Gold Accents",
+                "cover": "beauty-bathroom-man-gold-accents.mp4"
+              }
+            ]
+          },
+          "mode": {
+            "title": "Mode",
+            "description": "Required. Std mode is 5 seconds, pro mode is 10 seconds",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "std",
+            "enum": [
+              "std",
+              "pro"
+            ],
+            "x-options": [
+              {
+                "value": "std",
+                "label": "std (5 seconds)"
+              },
+              {
+                "value": "pro",
+                "label": "pro (10 seconds)"
+              }
+            ]
+          },
+          "inputImage": {
+            "title": "Input Image",
+            "description": "Required: Product photo",
+            "type": "string",
+            "format": "uri",
+            "x-input-type": "combinefileinput",
+            "x-label": "Input Image",
+            "x-help": "Required: Product photo"
+          },
+          "script": {
+            "title": "Script",
+            "description": "Required. Enter your video script. Note: Scripts exceeding the time limit for the selected mode will be cut short. Choose a longer duration mode for extensive scripts.",
+            "type": "string",
+            "default": "Perfect scent"
+          },
+          "ratio": {
+            "title": "ratio",
+            "description": "Required. Default 9:16",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "9:16",
+            "enum": [
+              "16:9",
+              "9:16",
+              "1:1"
+            ],
+            "x-options": [
+              {
+                "value": "16:9",
+                "label": "16:9"
+              },
+              {
+                "value": "9:16",
+                "label": "9:16"
+              },
+              {
+                "value": "1:1",
+                "label": "1:1"
+              }
+            ]
+          },
+          "inputImage2": {
+            "title": "Model Image",
+            "description": "Optional: Model photo",
+            "type": "string",
+            "format": "uri",
+            "x-input-type": "combinefileinput",
+            "x-label": "Model Image",
+            "x-help": "Optional: Model photo"
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "title": "Callback URL",
+            "description": "Optional webhook URL. Wiro will send a POST request to this URL when the task is completed."
+          }
+        },
+        "required": [
+          "effectType",
+          "mode",
+          "inputImage",
+          "script",
+          "ratio"
+        ]
+      }
+    }
+  },
+  "x-task-status-info": {
+    "description": "Task status values and their meanings",
+    "completed_statuses": {
+      "description": "Terminal states - stop polling when received",
+      "values": [
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
+      ]
+    },
+    "running_statuses": {
+      "description": "In-progress states - continue polling",
+      "values": [
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
+      ]
+    }
+  }
+}
