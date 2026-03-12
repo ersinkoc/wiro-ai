@@ -32,7 +32,7 @@ const client = new WiroClient({ apiKey, apiSecret });
 
 const server = new McpServer({
   name: 'wiro-mcp-server',
-  version: '1.0.2',
+  version: '1.0.3',
 });
 
 registerRunModel(server, client);

@@ -1,6 +1,6 @@
 {
   "name": "@wiroai/mcp-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Unofficial MCP server for Wiro AI — integrate AI model execution into Claude, Cursor, and other MCP-compatible tools",
   "type": "module",
   "main": "dist/index.js",

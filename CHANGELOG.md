@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-03-12
+
+### Added
+
+#### @wiroai/sdk
+- 24 Wiro platform models added to `KNOWN_MODELS` (76 total):
+  - Image Generation: FLUX.2 Dev, FLUX.2 Dev Turbo, InfiniteYou FLUX, Camera Angle Editor
+  - Commerce & Marketing: Shopify Template Generator, Virtual Try-On V1/V2, UGC Creator, 3D Text Animations
+  - LLM & Chat: Wiro Chat, RAG Chat, WiroAI Turkish LLM 8B/9B
+  - HR & Recruitment: Resume Parser, Resume Evaluator (Job Desc/Skills), Feedback Generator, Job Description Generator, Culture Fit Test/Evaluator, Exit Interview Generator/Evaluator, Leave Analysis, Pulse Survey Analyzer
+- 4 new model categories: `virtual-try-on`, `product-ads`, `template`, `text-to-3d`
+- 24 new OpenAPI spec files for all Wiro platform models
+- `llms.txt` — concise LLM-friendly project index following [llmstxt.org](https://llmstxt.org) spec
+- `llms-full.txt` — complete API reference with all SDK/CLI/MCP usage examples and 76 model slugs
+
+### Changed
+- README rewritten with full 76-model catalog table, architecture diagram, and improved Quick Start sections
+
 ## [1.0.2] - 2026-03-12
 
 ### Added
