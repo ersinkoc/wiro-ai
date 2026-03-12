@@ -1,6 +1,6 @@
 {
   "name": "@wiroai/sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Unofficial TypeScript SDK for Wiro AI — run AI models, manage tasks, auto-discover model parameters via OpenAPI specs",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,9 @@
   ],
   "scripts": {
     "build": "npx tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "wiro",

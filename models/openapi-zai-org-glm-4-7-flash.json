@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "google/gemini-2.5-tts API (API Key Auth)",
-    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nSimple API key authentication. Include your API key in the `x-api-key` header.\n\n```bash\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "title": "zai-org/GLM-4.7-Flash API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
     "version": "1.0.0",
     "contact": {
       "name": "Wiro AI",
@@ -22,12 +22,14 @@
     },
     {
       "name": "Task Management",
-      "description": "Monitor, cancel and kill tasks"
+      "description": "Monitor, cancel, and kill tasks"
     }
   ],
   "security": [
     {
-      "ApiKeyAuth": []
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
     }
   ],
   "paths": {
@@ -112,7 +114,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -129,11 +131,6 @@
           "required": true,
           "content": {
             "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskKillRequest"
-              }
-            },
-            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TaskKillRequest"
               }
@@ -169,11 +166,6 @@
               "schema": {
                 "$ref": "#/components/schemas/TaskCancelRequest"
               }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskCancelRequest"
-              }
             }
           }
         },
@@ -191,11 +183,11 @@
         }
       }
     },
-    "/Run/google/gemini-2.5-tts": {
+    "/Run/zai-org/GLM-4.7-Flash": {
       "post": {
-        "summary": "Run Gemini 2.5 TTS",
-        "description": "Google's Gemini 2.5 Flash Text To Speech Preview model\n\n**Processing Time:** 10 seconds",
-        "operationId": "rungemini2.5tts",
+        "summary": "Run GLM-4.7-Flash LLM Chat Model",
+        "description": "A chat-based language model optimized for conversational AI tasks with support for custom prompts and session management.\n\n**Processing Time:** 1 second",
+        "operationId": "runGLM4.7Flash",
         "tags": [
           "Run Task"
         ],
@@ -235,7 +227,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -247,7 +239,21 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Your API key from Wiro dashboard. Get it at https://wiro.ai/dashboard"
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
       }
     },
     "schemas": {
@@ -636,170 +642,115 @@
         "properties": {
           "prompt": {
             "title": "prompt",
-            "description": "prompt-help",
+            "description": "Prompt to send to the model.",
             "type": "string",
-            "default": "Say cheerfully: Gemini text to speech is on wiro now!"
+            "default": "Explain quantum mechanics clearly and concisely."
           },
-          "voice": {
-            "title": "Voice",
-            "description": "Voice",
+          "user_id": {
+            "title": "User ID",
+            "description": "You can leave it blank. The user_id parameter is a unique identifier for the user. It is used to store and retrieve the chat history specific to that user. You should provide a value that uniquely identifies the user across different sessions. For example, it can be the user’s email address, username, or a system-generated ID.",
+            "type": "string"
+          },
+          "session_id": {
+            "title": "Session ID",
+            "description": "You can leave it blank. The session_id parameter represents a specific session for a user. It allows you to manage multiple sessions for the same user. If you want to maintain separate chat histories for different sessions of the same user, use a unique session_id for each session. If not specified or kept the same, the system will treat all interactions as part of the same session.",
+            "type": "string"
+          },
+          "system_prompt": {
+            "title": "System Prompt",
+            "description": "System prompt to send to the model. This is prepended to the prompt and helps guide system behavior.",
             "type": "string",
-            "x-input-type": "select",
-            "default": "Achernar",
-            "enum": [
-              "Achernar",
-              "Achird",
-              "Algenib",
-              "Algieba",
-              "Alnilam",
-              "Aoede",
-              "Autonoe",
-              "Callirrhoe",
-              "Charon",
-              "Despina",
-              "Enceladus",
-              "Erinome",
-              "Fenrir",
-              "Gacrux",
-              "Iapetus",
-              "Kore",
-              "Laomedeia",
-              "Leda",
-              "Orus",
-              "Pulcherrima",
-              "Puck",
-              "Rasalgethi",
-              "Sadachbia",
-              "Sadaltager",
-              "Schedar",
-              "Sulafat",
-              "Umbriel",
-              "Vindemiatrix",
-              "Zephyr",
-              "Zubenelgenubi"
-            ],
-            "x-options": [
-              {
-                "value": "Achernar",
-                "label": "Achernar Female"
-              },
-              {
-                "value": "Achird",
-                "label": "Achird Male"
-              },
-              {
-                "value": "Algenib",
-                "label": "Algenib Male"
-              },
-              {
-                "value": "Algieba",
-                "label": "Algieba Male"
-              },
-              {
-                "value": "Alnilam",
-                "label": "Alnilam Male"
-              },
-              {
-                "value": "Aoede",
-                "label": "Aoede Female"
-              },
-              {
-                "value": "Autonoe",
-                "label": "Autonoe Female"
-              },
-              {
-                "value": "Callirrhoe",
-                "label": "Callirrhoe Female"
-              },
-              {
-                "value": "Charon",
-                "label": "Charon Male"
-              },
-              {
-                "value": "Despina",
-                "label": "Despina Female"
-              },
-              {
-                "value": "Enceladus",
-                "label": "Enceladus Male"
-              },
-              {
-                "value": "Erinome",
-                "label": "Erinome Female"
-              },
-              {
-                "value": "Fenrir",
-                "label": "Fenrir Male"
-              },
-              {
-                "value": "Gacrux",
-                "label": "Gacrux Female"
-              },
-              {
-                "value": "Iapetus",
-                "label": "Iapetus Male"
-              },
-              {
-                "value": "Kore",
-                "label": "Kore Female"
-              },
-              {
-                "value": "Laomedeia",
-                "label": "Laomedeia Female"
-              },
-              {
-                "value": "Leda",
-                "label": "Leda Female"
-              },
-              {
-                "value": "Orus",
-                "label": "Orus Male"
-              },
-              {
-                "value": "Pulcherrima",
-                "label": "Pulcherrima Female"
-              },
-              {
-                "value": "Puck",
-                "label": "Puck Male"
-              },
-              {
-                "value": "Rasalgethi",
-                "label": "Rasalgethi Male"
-              },
-              {
-                "value": "Sadachbia",
-                "label": "Sadachbia Male"
-              },
-              {
-                "value": "Sadaltager",
-                "label": "Sadaltager Male"
-              },
-              {
-                "value": "Schedar",
-                "label": "Schedar Male"
-              },
-              {
-                "value": "Sulafat",
-                "label": "Sulafat Female"
-              },
-              {
-                "value": "Umbriel",
-                "label": "Umbriel Male"
-              },
-              {
-                "value": "Vindemiatrix",
-                "label": "Vindemiatrix Female"
-              },
-              {
-                "value": "Zephyr",
-                "label": "Zephyr Female"
-              },
-              {
-                "value": "Zubenelgenubi",
-                "label": "Zubenelgenubi Male"
-              }
-            ]
+            "default": "You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe. Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature. \nIf a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information."
+          },
+          "temperature": {
+            "title": "Temperature",
+            "description": "Adjusts randomness of outputs, greater than 1 is random and 0 is deterministic, 0.75 is a good starting value.",
+            "type": "string"
+          },
+          "top_p": {
+            "title": "Top P",
+            "description": "When decoding text, samples from the top p percentage of most likely tokens; lower to ignore less likely tokens.",
+            "type": "string"
+          },
+          "top_k": {
+            "title": "Top K",
+            "description": "When decoding text, samples from the top k most likely tokens; lower to ignore less likely tokens.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0,
+            "multipleOf": 1
+          },
+          "repetition_penalty": {
+            "title": "Repetition Penalty",
+            "description": "It is a hyperparameter used to reduce the likelihood of the model generating repetitive text by applying a penalty to previously generated tokens, encouraging more diverse and coherent output.",
+            "type": "string"
+          },
+          "length_penalty": {
+            "title": "Length Penalty",
+            "description": "A parameter that controls how long the outputs are. If < 1, the model will tend to generate shorter outputs, and > 1 will tend to generate longer outputs.",
+            "type": "string"
+          },
+          "max_tokens": {
+            "title": "Max Tokens",
+            "description": "Maximum number of tokens to generate. A word is generally 2-3 tokens.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 800000,
+            "default": 0,
+            "multipleOf": 1
+          },
+          "min_tokens": {
+            "title": "Min Tokens",
+            "description": "Minimum number of tokens to generate. To disable, set to -1. A word is generally 2-3 tokens.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2048,
+            "default": 0,
+            "multipleOf": 1
+          },
+          "max_new_tokens": {
+            "title": "Max New Tokens",
+            "description": "This parameter has been renamed to max_tokens. max_new_tokens only exists for backwards compatibility purposes. We recommend you use max_tokens instead. Both may not be specified.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 4096,
+            "default": 0,
+            "multipleOf": 1
+          },
+          "min_new_tokens": {
+            "title": "Min New Tokens",
+            "description": "This parameter has been renamed to min_tokens. min_new_tokens only exists for backwards compatibility purposes. We recommend you use min_tokens instead. Both may not be specified.",
+            "type": "number",
+            "minimum": -1,
+            "maximum": 2048,
+            "default": -1,
+            "multipleOf": 1
+          },
+          "stop_sequences": {
+            "title": "Stop Sequences",
+            "description": "A semicolon-separated list of sequences to stop generation at. For example, '<end>;<stop>' will stop generation at the first instance of 'end' or '<stop>'.",
+            "type": "string"
+          },
+          "seed": {
+            "title": "Seed",
+            "description": "seed-help",
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 9999999,
+            "default": "123456"
+          },
+          "quantization": {
+            "title": "Quantization",
+            "description": "Quantization is a technique that reduces the precision of model weights (e.g., from FP32 to INT8) to decrease memory usage and improve inference speed. When enabled (true), the model uses less VRAM, making it suitable for resource-constrained environments, but might slightly affect output quality. When disabled (false), the model runs at full precision, ensuring maximum accuracy but requiring more GPU memory and running slower.",
+            "type": "boolean",
+            "default": false
+          },
+          "do_sample": {
+            "title": "Do Sample",
+            "description": "The do_sample parameter controls whether the model generates text deterministically or with randomness. For precise tasks like translations or code generation, set do_sample = false to ensure consistent and predictable outputs. For creative tasks like storytelling or poetry, set do_sample = true to allow the model to produce diverse and imaginative results.",
+            "type": "boolean",
+            "default": false
           },
           "callbackUrl": {
             "type": "string",
@@ -809,8 +760,7 @@
           }
         },
         "required": [
-          "prompt",
-          "voice"
+          "prompt"
         ]
       }
     }
@@ -820,20 +770,47 @@
     "completed_statuses": {
       "description": "Terminal states - stop polling when received",
       "values": [
-        "task_postprocess_end",
-        "task_cancel"
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
       ]
     },
     "running_statuses": {
       "description": "In-progress states - continue polling",
       "values": [
-        "task_queue",
-        "task_accept",
-        "task_assign",
-        "task_preprocess_start",
-        "task_preprocess_end",
-        "task_start",
-        "task_output"
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
       ]
     }
   }

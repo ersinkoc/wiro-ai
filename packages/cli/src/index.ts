@@ -19,11 +19,11 @@ const HELP = `
   wiro <command> [options]
 
 \x1b[1mCOMMANDS\x1b[0m
-  run <model>        Run an AI model
+  run <model>        Run an AI model (auto-fetches spec if needed)
   models             List available models
   status <token>     Check task status
   watch <token>      Watch task in real-time (WebSocket)
-  info <model>       Show model parameters
+  info <model>       Show model parameters & usage examples
   kill <taskId>      Kill a running task
   cancel <taskId>    Cancel a queued task
   fetch-spec <model> Download model OpenAPI spec
@@ -31,18 +31,23 @@ const HELP = `
 
 \x1b[1mEXAMPLES\x1b[0m
   wiro run google/nano-banana-pro -p "A sunset over mountains"
-  wiro run https://wiro.ai/models/openai/sora-2 -p "A cat walking"
+  wiro run openai/sora-2 -p "A cat walking" --param aspectRatio=16:9
+  wiro run <model> --help                Show model-specific parameters
+  wiro info alibaba/wan-2-6              Parameters + CLI usage
+  wiro info alibaba/wan-2-6 --usage      Parameters + CLI/MCP/SDK usage
   wiro models --category text-to-image
   wiro fetch-spec https://wiro.ai/models/alibaba/wan-2-6
-  wiro info alibaba/wan-2-6
-  wiro status <task-token>
   wiro config set apiKey YOUR_KEY
+
+\x1b[1mDYNAMIC PARAMETERS\x1b[0m
+  Use --param key=value for any model parameter (from OpenAPI spec):
+    wiro run google/nano-banana-pro -p "test" --param aspectRatio=16:9
+    wiro run google/nano-banana-pro -p "test" --param resolution=2K
 
 \x1b[1mGLOBAL OPTIONS\x1b[0m
   --help, -h       Show help
   --version, -v    Show version
   --json           Output as JSON
-  --verbose        Verbose logging
 `;
 
 const command = process.argv[2];
@@ -76,6 +81,7 @@ switch (command) {
         timeout: { type: 'string' },
         output: { type: 'string', short: 'o' },
         json: { type: 'boolean' },
+        help: { type: 'boolean', short: 'h' },
       },
       allowPositionals: true,
     });
@@ -94,6 +100,7 @@ switch (command) {
       timeout: values['timeout'] ? parseInt(values['timeout'], 10) : undefined,
       output: values['output'],
       json: values['json'],
+      help: values['help'],
     });
     break;
   }
@@ -155,10 +162,13 @@ switch (command) {
     }
     const { values } = parseArgs({
       args: restArgs.slice(1),
-      options: { json: { type: 'boolean' } },
+      options: {
+        json: { type: 'boolean' },
+        usage: { type: 'boolean' },
+      },
       allowPositionals: true,
     });
-    await infoCommand(parseModelSlug(rawInfo), { json: values['json'] });
+    await infoCommand(parseModelSlug(rawInfo), { json: values['json'], usage: values['usage'] });
     break;
   }
 

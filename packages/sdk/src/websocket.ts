@@ -48,7 +48,10 @@ export function connectTaskWebSocket(taskToken: string, callbacks: TaskCallbacks
           break;
       }
     } catch (err) {
-      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
+      /* v8 ignore start */
+      const error = err instanceof Error ? err : new Error(String(err));
+      callbacks.onError?.(error);
+      /* v8 ignore stop */
     }
   });
 

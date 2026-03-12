@@ -87,13 +87,14 @@ export function formatModelDefinition(def: ModelDefinition): string {
 
   for (const p of def.parameters) {
     const req = p.required ? 'Yes' : 'No';
-    const def_val = p.default !== undefined ? String(p.default) : '—';
+    const rawDef = p.default !== undefined ? String(p.default) : '—';
+    const def_val = rawDef.length > 30 ? rawDef.slice(0, 30) + '...' : rawDef;
     let desc = p.description;
-    if (p.enum) {
-      desc += ` (Options: ${p.enum.join(', ')})`;
-    }
-    if (p.options) {
-      desc += ` (Options: ${p.options.map(o => o.label || o.value).join(', ')})`;
+    // Prefer options over enum to avoid duplication
+    if (p.options && p.options.length > 0) {
+      desc += ` (Options: ${p.options.map(o => o.value).filter(v => v !== '').join(', ')})`;
+    } else if (p.enum) {
+      desc += ` (Options: ${(p.enum as unknown[]).filter(v => v !== '').join(', ')})`;
     }
     lines.push(`| ${p.name} | ${p.type} | ${req} | ${def_val} | ${desc} |`);
   }

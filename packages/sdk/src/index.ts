@@ -41,9 +41,11 @@ export {
   ModelRegistry,
   getModelRegistry,
   parseOpenApiSpec,
+  generateModelHelp,
 } from './model-registry.js';
 export type {
   ModelDefinition,
   ModelParameter,
+  ModelHelp,
 } from './model-registry.js';
 export { parseModelSlug } from './utils.js';

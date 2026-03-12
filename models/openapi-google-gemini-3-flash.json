@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "ByteDance/seedance-pro-v1.5-uncensored API (API Key Auth)",
-    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nSimple API key authentication. Include your API key in the `x-api-key` header.\n\n```bash\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "title": "google/gemini-3-flash API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
     "version": "1.0.0",
     "contact": {
       "name": "Wiro AI",
@@ -22,12 +22,14 @@
     },
     {
       "name": "Task Management",
-      "description": "Monitor, cancel and kill tasks"
+      "description": "Monitor, cancel, and kill tasks"
     }
   ],
   "security": [
     {
-      "ApiKeyAuth": []
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
     }
   ],
   "paths": {
@@ -112,7 +114,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -129,11 +131,6 @@
           "required": true,
           "content": {
             "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskKillRequest"
-              }
-            },
-            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TaskKillRequest"
               }
@@ -169,11 +166,6 @@
               "schema": {
                 "$ref": "#/components/schemas/TaskCancelRequest"
               }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskCancelRequest"
-              }
             }
           }
         },
@@ -191,11 +183,11 @@
         }
       }
     },
-    "/Run/ByteDance/seedance-pro-v1.5-uncensored": {
+    "/Run/google/gemini-3-flash": {
       "post": {
-        "summary": "Run Seedance Pro V1.5 Uncensored Video Generator",
-        "description": "Generates videos from text prompts with customizable resolution, duration, and aspect ratios. Designed for creators and developers building video content.\n\n**Processing Time:** 60 seconds",
-        "operationId": "runseedanceprov1.5uncensored",
+        "summary": "Run gemini-3-flash",
+        "description": "gemini-3-flash\n\n**Processing Time:** 10 seconds",
+        "operationId": "rungemini3flash",
         "tags": [
           "Run Task"
         ],
@@ -235,7 +227,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -247,7 +239,21 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Your API key from Wiro dashboard. Get it at https://wiro.ai/dashboard"
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
       }
     },
     "schemas": {
@@ -634,193 +640,85 @@
       "RunToolSchema": {
         "type": "object",
         "properties": {
-          "inputImage": {
-            "title": "first_frame_image",
-            "description": "Optional",
+          "inputAll": {
+            "title": "input files",
+            "description": "Optional. Multiple files separated by semicolon. Supports images, videos, and audio.",
             "type": "string",
             "format": "uri",
             "x-input-type": "combinefileinput",
-            "x-label": "first_frame_image",
-            "x-help": "Optional"
-          },
-          "inputImageLast": {
-            "title": "last_frame_image",
-            "description": "Optional",
-            "type": "string",
-            "format": "uri",
-            "x-input-type": "combinefileinput",
-            "x-label": "last_frame_image",
-            "x-help": "Optional"
+            "x-label": "input files",
+            "x-help": "Optional. Multiple files separated by semicolon. Supports images, videos, and audio."
           },
           "prompt": {
-            "title": "Prompt",
-            "description": "The prompt to generate the video.",
+            "title": "prompt",
+            "description": "Required.",
+            "type": "string",
+            "default": "Tell me about Türkiye"
+          },
+          "user_id": {
+            "title": "user ID",
+            "description": "Required for chat history. Numeric or string ID.",
             "type": "string"
           },
-          "resolution": {
-            "title": "Resolution",
-            "description": "Video resolution",
+          "session_id": {
+            "title": "session ID",
+            "description": "Required for chat history. Numeric or string ID.",
+            "type": "string"
+          },
+          "systemInstructions": {
+            "title": "system instructions",
+            "description": "Optional. System-level instructions for the model.",
+            "type": "string"
+          },
+          "thinkingLevel": {
+            "title": "thinking level",
+            "description": "Optional",
             "type": "string",
             "x-input-type": "select",
-            "default": "480p",
+            "default": "low",
             "enum": [
-              "480p",
-              "720p",
-              "1080p"
+              "minimal",
+              "low",
+              "medium",
+              "high"
             ],
             "x-options": [
               {
-                "value": "480p",
-                "label": "480p"
+                "value": "minimal",
+                "label": "minimal"
               },
               {
-                "value": "720p",
-                "label": "720p"
+                "value": "low",
+                "label": "low"
               },
               {
-                "value": "1080p",
-                "label": "1080p"
+                "value": "medium",
+                "label": "medium"
+              },
+              {
+                "value": "high",
+                "label": "high"
               }
             ]
           },
-          "ratio": {
-            "title": "Ratio",
-            "description": "Generate video aspect ratio.",
-            "type": "string",
-            "x-input-type": "select",
-            "default": "adaptive",
-            "enum": [
-              "adaptive",
-              "16:9",
-              "4:3",
-              "1:1",
-              "3:4",
-              "9:16",
-              "21:9"
-            ],
-            "x-options": [
-              {
-                "value": "adaptive",
-                "label": "adaptive"
-              },
-              {
-                "value": "16:9",
-                "label": "16:9"
-              },
-              {
-                "value": "4:3",
-                "label": "4:3"
-              },
-              {
-                "value": "1:1",
-                "label": "1:1"
-              },
-              {
-                "value": "3:4",
-                "label": "3:4"
-              },
-              {
-                "value": "9:16",
-                "label": "9:16"
-              },
-              {
-                "value": "21:9",
-                "label": "21:9"
-              }
-            ]
+          "temperature": {
+            "title": "temperature",
+            "description": "Optional. Controls randomness. Range: 0.0-2.0",
+            "type": "string"
           },
-          "duration": {
-            "title": "Duration",
-            "description": "Generated video duration in seconds.",
-            "type": "string",
-            "x-input-type": "select",
-            "default": "5",
-            "enum": [
-              "5",
-              "10"
-            ],
-            "x-options": [
-              {
-                "value": "5",
-                "label": "5"
-              },
-              {
-                "value": "10",
-                "label": "10"
-              }
-            ]
+          "topP": {
+            "title": "top P",
+            "description": "Optional. Nucleus sampling. Range: 0.0-1.0",
+            "type": "string"
           },
-          "generateAudio": {
-            "title": "Generate Audio",
-            "description": "Output video will contain audio or not",
-            "type": "string",
-            "x-input-type": "select",
-            "default": "true",
-            "enum": [
-              "false",
-              "true"
-            ],
-            "x-options": [
-              {
-                "value": "false",
-                "label": "false"
-              },
-              {
-                "value": "true",
-                "label": "true"
-              }
-            ]
-          },
-          "watermark": {
-            "title": "Watermark",
-            "description": "Generate whether the video contains a watermark.",
-            "type": "string",
-            "x-input-type": "select",
-            "default": "false",
-            "enum": [
-              "false",
-              "true"
-            ],
-            "x-options": [
-              {
-                "value": "false",
-                "label": "false"
-              },
-              {
-                "value": "true",
-                "label": "true"
-              }
-            ]
-          },
-          "seed": {
-            "title": "Seed",
-            "description": "Seed integer to control the randomness of generated content. Set -1 to random.",
+          "maxOutputTokens": {
+            "title": "max output tokens",
+            "description": "Optional. Maximum response length. Range: 1-65536",
             "type": "number",
-            "minimum": -1,
-            "maximum": 4294967295,
-            "default": 1,
+            "minimum": 1,
+            "maximum": 65536,
+            "default": 65536,
             "multipleOf": 1
-          },
-          "cameraFixed": {
-            "title": "Fix camera",
-            "description": "Whether to fix the camera position.",
-            "type": "string",
-            "x-input-type": "select",
-            "default": "false",
-            "enum": [
-              "false",
-              "true"
-            ],
-            "x-options": [
-              {
-                "value": "false",
-                "label": "false"
-              },
-              {
-                "value": "true",
-                "label": "true"
-              }
-            ]
           },
           "callbackUrl": {
             "type": "string",
@@ -830,9 +728,7 @@
           }
         },
         "required": [
-          "resolution",
-          "ratio",
-          "duration"
+          "prompt"
         ]
       }
     }
@@ -842,20 +738,47 @@
     "completed_statuses": {
       "description": "Terminal states - stop polling when received",
       "values": [
-        "task_postprocess_end",
-        "task_cancel"
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
       ]
     },
     "running_statuses": {
       "description": "In-progress states - continue polling",
       "values": [
-        "task_queue",
-        "task_accept",
-        "task_assign",
-        "task_preprocess_start",
-        "task_preprocess_end",
-        "task_start",
-        "task_output"
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
       ]
     }
   }

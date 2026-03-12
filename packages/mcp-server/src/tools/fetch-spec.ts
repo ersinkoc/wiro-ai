@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v4';
 import type { WiroClient } from '@wiroai/sdk';
-import { getModelRegistry, parseOpenApiSpec, parseModelSlug } from '@wiroai/sdk';
+import { getModelRegistry, parseOpenApiSpec, parseModelSlug, generateModelHelp } from '@wiroai/sdk';
 import { formatModelDefinition } from '../utils/format.js';
 
 export function registerFetchSpec(server: McpServer, client: WiroClient): void {
@@ -32,6 +32,9 @@ export function registerFetchSpec(server: McpServer, client: WiroClient): void {
 
         if (parsed) {
           text += `\n${formatModelDefinition(parsed)}`;
+          const help = generateModelHelp(parsed);
+          text += `\n\n### MCP Usage Example\n\n\`\`\`json\n${help.mcpUsage}\n\`\`\``;
+          text += `\n\n### Quick Reference\n\n\`\`\`\n${help.quickReference}\n\`\`\``;
         }
 
         text += '\n\n> This model\'s parameters are now available for validation with `wiro_run_model` and details via `wiro_model_info`.';

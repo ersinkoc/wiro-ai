@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "google/nano-banana-2 API (API Key Auth)",
-    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nSimple API key authentication. Include your API key in the `x-api-key` header.\n\n```bash\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "title": "ByteDance/seedance-v1-pro-fast API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
     "version": "1.0.0",
     "contact": {
       "name": "Wiro AI",
@@ -22,12 +22,14 @@
     },
     {
       "name": "Task Management",
-      "description": "Monitor, cancel and kill tasks"
+      "description": "Monitor, cancel, and kill tasks"
     }
   ],
   "security": [
     {
-      "ApiKeyAuth": []
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
     }
   ],
   "paths": {
@@ -112,7 +114,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -129,11 +131,6 @@
           "required": true,
           "content": {
             "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskKillRequest"
-              }
-            },
-            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TaskKillRequest"
               }
@@ -169,11 +166,6 @@
               "schema": {
                 "$ref": "#/components/schemas/TaskCancelRequest"
               }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskCancelRequest"
-              }
             }
           }
         },
@@ -191,11 +183,11 @@
         }
       }
     },
-    "/Run/google/nano-banana-2": {
+    "/Run/ByteDance/seedance-v1-pro-fast": {
       "post": {
-        "summary": "Run Nano-Banana-2 Image Editing Tool",
-        "description": "An image editing tool designed for quick transformations using reference images and prompts. Supports multi-image mixing and aspect ratio adjustments.\n\n**Processing Time:** 10 seconds",
-        "operationId": "runnanobanana2",
+        "summary": "Run Seedance V1 Pro Fast - Video Generator",
+        "description": "Generate videos from text prompts or images using the Seedance V1 Pro Fast model. Supports multiple resolutions and aspect ratios.\n\n**Processing Time:** 30 seconds",
+        "operationId": "runseedancev1profast",
         "tags": [
           "Run Task"
         ],
@@ -235,7 +227,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -247,7 +239,21 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Your API key from Wiro dashboard. Get it at https://wiro.ai/dashboard"
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
       }
     },
     "schemas": {
@@ -635,168 +641,161 @@
         "type": "object",
         "properties": {
           "inputImage": {
-            "title": "Input Image",
-            "description": "Gemini 3.1 Flash Preview lets you to mix up to 14 reference images. These 14 images can include the following: Up to 10 images of objects with high-fidelity to include in the final image, up to 4 images of characters to maintain character consistency",
+            "title": "Image",
+            "description": "Required if there is no prompt.",
             "type": "string",
             "format": "uri",
             "x-input-type": "combinefileinput",
-            "x-label": "Input Image",
-            "x-help": "Gemini 3.1 Flash Preview lets you to mix up to 14 reference images. These 14 images can include the following: Up to 10 images of objects with high-fidelity to include in the final image, up to 4 images of characters to maintain character consistency"
+            "x-label": "Image",
+            "x-help": "Required if there is no prompt."
           },
           "prompt": {
-            "title": "prompt",
-            "description": "The prompt to generate the image.",
-            "type": "string"
+            "title": "Prompt",
+            "description": "Optional for i2v, required for t2v. The prompt to generate the video.",
+            "type": "string",
+            "default": "Cinematic documentary shot. The elderly barber\\'s hands move with careful, precise motions, using the clippers and pink comb to gently trim the seated man\\'s hair. The seated man breathes softly with subtle, natural facial micro-expressions. A few cut hair clippings gently fall onto the white protective cape. Natural lighting, hyper-realistic textures, static camera focusing on the authentic, subtle fluid motion of the haircutting process."
           },
-          "aspectRatio": {
-            "title": "Aspect Ratio",
-            "description": "Aspect Ratio of the output image",
+          "resolution": {
+            "title": "Resolution",
+            "description": "Required. Video resolution",
             "type": "string",
             "x-input-type": "select",
+            "default": "480p",
             "enum": [
-              "",
-              "1:1",
-              "1:4",
-              "1:8",
-              "2:3",
-              "3:2",
-              "3:4",
-              "4:1",
-              "4:3",
-              "4:5",
-              "5:4",
-              "8:1",
-              "9:16",
+              "480p",
+              "720p",
+              "1080p"
+            ],
+            "x-options": [
+              {
+                "value": "480p",
+                "label": "480p"
+              },
+              {
+                "value": "720p",
+                "label": "720p"
+              },
+              {
+                "value": "1080p",
+                "label": "1080p"
+              }
+            ]
+          },
+          "ratio": {
+            "title": "Ratio",
+            "description": "Required. Generate video aspect ratio. Adaptive is available for image to video only, if you send adaptive without image it will be set to 16:9 by default",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "adaptive",
+            "enum": [
+              "adaptive",
               "16:9",
+              "4:3",
+              "1:1",
+              "3:4",
+              "9:16",
               "21:9"
             ],
             "x-options": [
               {
-                "value": "",
-                "label": "Match Input Image"
-              },
-              {
-                "value": "1:1",
-                "label": "1:1 (05.K)512x512 (1K)1024x1024 (2K)2048x2048 (4K)4096x4096"
-              },
-              {
-                "value": "1:4",
-                "label": "1:4 (05.K)256x1024 (1K)512x2048 (2K)1024x4096 (4K)2048x8192"
-              },
-              {
-                "value": "1:8",
-                "label": "1:8 (05.K)192x1536 (1K)384x3072 (2K)768x6144 (4K)1536x12288"
-              },
-              {
-                "value": "2:3",
-                "label": "2:3 (05.K)424x632 (1K)848x1264 (2K)1696x2528 (4K)3392x5056"
-              },
-              {
-                "value": "3:2",
-                "label": "3:2 (05.K)632x424 (1K)1264x848 (2K)2528x1696 (4K)5056x3392"
-              },
-              {
-                "value": "3:4",
-                "label": "3:4 (05.K)448x600 (1K)896x1200 (2K)1792x2400 (4K)3584x4800"
-              },
-              {
-                "value": "4:1",
-                "label": "4:1 (05.K)1024x256 (1K)2048x512 (2K)4096x1024 (4K)8192x2048"
-              },
-              {
-                "value": "4:3",
-                "label": "4:3 (05.K)600x448 (1K)1200x896 (2K)2400x1792 (4K)4800x3584"
-              },
-              {
-                "value": "4:5",
-                "label": "4:5 (05.K)464x576 (1K)928x1152 (2K)1856x2304 (4K)3712x4608"
-              },
-              {
-                "value": "5:4",
-                "label": "5:4 (05.K)576x464 (1K)1152x928 (2K)2304x1856 (4K)4608x3712"
-              },
-              {
-                "value": "8:1",
-                "label": "8:1 (05.K)1536x192 (1K)3072x384 (2K)6144x768 (4K)12288x1536"
-              },
-              {
-                "value": "9:16",
-                "label": "9:16 (05.K)384x688 (1K)768x1376 (2K)1536x2752 (4K)3072x5504"
+                "value": "adaptive",
+                "label": "adaptive"
               },
               {
                 "value": "16:9",
-                "label": "16:9 (05.K)688x384 (1K)1376x768 (2K)2752x1536 (4K)5504x3072"
+                "label": "16:9"
+              },
+              {
+                "value": "4:3",
+                "label": "4:3"
+              },
+              {
+                "value": "1:1",
+                "label": "1:1"
+              },
+              {
+                "value": "3:4",
+                "label": "3:4"
+              },
+              {
+                "value": "9:16",
+                "label": "9:16"
               },
               {
                 "value": "21:9",
-                "label": "21:9 (05.K)792x168 (1K)1584x672 (2K)3168x1344 (4K)6336x2688"
+                "label": "21:9"
               }
             ]
           },
-          "resolution": {
-            "title": "Resolution (K)",
-            "description": "Default is 1K",
+          "duration": {
+            "title": "Duration",
+            "description": "Required. Generated video duration in seconds.",
             "type": "string",
             "x-input-type": "select",
-            "default": "1K",
+            "default": "5",
             "enum": [
-              "1K",
-              "1K",
-              "2K",
-              "4K"
+              "5",
+              "10"
             ],
             "x-options": [
               {
-                "value": "1K",
-                "label": "05.K (Standard)"
+                "value": "5",
+                "label": "5"
               },
               {
-                "value": "1K",
-                "label": "1K (Standard)"
-              },
-              {
-                "value": "2K",
-                "label": "2K (High)"
-              },
-              {
-                "value": "4K",
-                "label": "4K (Ultra High)"
+                "value": "10",
+                "label": "10"
               }
             ]
           },
-          "safetySetting": {
-            "title": "Safety Setting",
-            "description": "Safety Setting",
+          "watermark": {
+            "title": "Watermark",
+            "description": "Optional. Default false. Generate whether the video contains a watermark.",
             "type": "string",
             "x-input-type": "select",
-            "default": "OFF",
+            "default": "false",
             "enum": [
-              "BLOCK_LOW_AND_ABOVE",
-              "BLOCK_MEDIUM_AND_ABOVE",
-              "BLOCK_ONLY_HIGH",
-              "BLOCK_NONE",
-              "OFF"
+              "false",
+              "true"
             ],
             "x-options": [
               {
-                "value": "BLOCK_LOW_AND_ABOVE",
-                "label": "BLOCK_LOW_AND_ABOVE"
+                "value": "false",
+                "label": "false"
               },
               {
-                "value": "BLOCK_MEDIUM_AND_ABOVE",
-                "label": "BLOCK_MEDIUM_AND_ABOVE"
+                "value": "true",
+                "label": "true"
+              }
+            ]
+          },
+          "seed": {
+            "title": "Seed",
+            "description": "Optional. Default random. Seed integer to control the randomness of generated content. Set 0 to random.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 99999999,
+            "default": 1,
+            "multipleOf": 1
+          },
+          "cameraFixed": {
+            "title": "Fix camera",
+            "description": "Optional. Default false. Whether to fix the camera position.",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "false",
+            "enum": [
+              "false",
+              "true"
+            ],
+            "x-options": [
+              {
+                "value": "false",
+                "label": "false"
               },
               {
-                "value": "BLOCK_ONLY_HIGH",
-                "label": "BLOCK_ONLY_HIGH"
-              },
-              {
-                "value": "BLOCK_NONE",
-                "label": "BLOCK_NONE"
-              },
-              {
-                "value": "OFF",
-                "label": "OFF"
+                "value": "true",
+                "label": "true"
               }
             ]
           },
@@ -808,7 +807,9 @@
           }
         },
         "required": [
-          "prompt"
+          "resolution",
+          "ratio",
+          "duration"
         ]
       }
     }
@@ -818,20 +819,47 @@
     "completed_statuses": {
       "description": "Terminal states - stop polling when received",
       "values": [
-        "task_postprocess_end",
-        "task_cancel"
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
       ]
     },
     "running_statuses": {
       "description": "In-progress states - continue polling",
       "values": [
-        "task_queue",
-        "task_accept",
-        "task_assign",
-        "task_preprocess_start",
-        "task_preprocess_end",
-        "task_start",
-        "task_output"
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
       ]
     }
   }

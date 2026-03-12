@@ -32,7 +32,7 @@ const client = new WiroClient({ apiKey, apiSecret });
 
 const server = new McpServer({
   name: 'wiro-mcp-server',
-  version: '1.0.0',
+  version: '1.0.2',
 });
 
 registerRunModel(server, client);
@@ -40,7 +40,7 @@ registerListModels(server);
 registerTaskStatus(server, client);
 registerTaskWait(server, client);
 registerListCategories(server);
-registerModelInfo(server);
+registerModelInfo(server, client);
 registerTaskKill(server, client);
 registerTaskCancel(server, client);
 registerFetchSpec(server, client);

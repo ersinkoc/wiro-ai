@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { join, extname } from 'node:path';
-import { WiroClient, getModelRegistry } from '@wiroai/sdk';
+import { join } from 'node:path';
+import { WiroClient, getModelRegistry, generateModelHelp } from '@wiroai/sdk';
 import { getApiKey, getApiSecret, getOutputDir, getDefaultTimeout } from '../utils/config.js';
-import { error, success, info, createSpinner, heading } from '../utils/output.js';
+import { error, success, info, warn, createSpinner, heading } from '../utils/output.js';
 
 interface RunOptions {
   prompt?: string;
@@ -18,6 +18,7 @@ interface RunOptions {
   timeout?: number;
   output?: string;
   json?: boolean;
+  help?: boolean;
 }
 
 function parseExtraParams(params: string[]): Record<string, unknown> {
@@ -29,8 +30,13 @@ function parseExtraParams(params: string[]): Record<string, unknown> {
     } else {
       const key = p.slice(0, eqIndex);
       const value = p.slice(eqIndex + 1);
-      const num = Number(value);
-      result[key] = isNaN(num) ? value : num;
+      // Try JSON parse for complex values, then number, then string
+      try {
+        result[key] = JSON.parse(value);
+      } catch {
+        const num = Number(value);
+        result[key] = isNaN(num) ? value : num;
+      }
     }
   }
   return result;
@@ -63,7 +69,43 @@ export async function runCommand(model: string, options: RunOptions): Promise<vo
   }
 
   const client = new WiroClient({ apiKey, apiSecret });
+  const registry = getModelRegistry();
 
+  // Auto-fetch spec if not available locally
+  let def = registry.get(model);
+  if (!def) {
+    const spinner = createSpinner(`Fetching spec for ${model}...`);
+    try {
+      def = await registry.ensureSpec(client, model);
+      spinner.stop();
+      if (def) {
+        success(`Spec fetched and cached for ${model} (${def.parameters.length} parameters)`);
+      }
+    } catch {
+      spinner.stop();
+      warn(`Could not fetch spec for ${model}. Running without parameter validation.`);
+    }
+  }
+
+  // --help: Show model-specific help and exit
+  if (options.help) {
+    if (def) {
+      const help = generateModelHelp(def);
+      heading(help.summary);
+      console.log('');
+      heading('Parameters');
+      console.log(help.parametersTable);
+      console.log('');
+      heading('CLI Usage');
+      console.log(help.cliUsage);
+    } else {
+      info(`No spec available for "${model}". Use "wiro fetch-spec ${model}" to download it.`);
+      info('You can still run this model with --param key=value pairs.');
+    }
+    return;
+  }
+
+  // Build params from CLI flags + --param overrides
   const params: Record<string, unknown> = {};
 
   if (options.prompt) params['prompt'] = options.prompt;
@@ -86,19 +128,41 @@ export async function runCommand(model: string, options: RunOptions): Promise<vo
     }
   }
 
+  // --param overrides (highest priority - supports any model parameter)
   if (options.param) {
     Object.assign(params, parseExtraParams(options.param));
   }
 
   // Validate against model spec if available
-  const registry = getModelRegistry();
   const validationErrors = registry.validateParams(model, params);
   if (validationErrors.length > 0) {
     error('Validation errors:');
     for (const e of validationErrors) {
       error(`  ${e}`);
     }
-    info('Run "wiro info ' + model + '" to see available parameters.');
+    if (def) {
+      const help = generateModelHelp(def);
+      console.log('');
+      heading('Quick Reference');
+      console.log(help.quickReference);
+      console.log('');
+      // Show hints for missing required params
+      const missing = validationErrors
+        .filter(e => e.startsWith('Missing required parameter'))
+        .map(e => e.match(/"([^"]+)"/)?.[1])
+        .filter(Boolean) as string[];
+      if (missing.length > 0) {
+        info('Use --param key=value for any parameter, e.g.:');
+        for (const m of missing) {
+          const p = def.parameters.find(pp => pp.name === m);
+          if (p) {
+            info(`  --param ${m}=<value>  (${p.type})`);
+          }
+        }
+      }
+    } else {
+      info('Run "wiro info ' + model + '" to see available parameters.');
+    }
     process.exitCode = 1;
     return;
   }

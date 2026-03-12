@@ -1,0 +1,871 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "PixVerse/text-to-video-v5 API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Wiro AI",
+      "url": "https://wiro.ai"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.wiro.ai/v1",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Run Task",
+      "description": "Execute AI model tasks"
+    },
+    {
+      "name": "Task Management",
+      "description": "Monitor, cancel, and kill tasks"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
+    }
+  ],
+  "paths": {
+    "/Task/Detail": {
+      "post": {
+        "summary": "Get Task Detail",
+        "description": "Retrieve the current status and output of a task using taskid, tasktoken, or uuid.",
+        "operationId": "getTaskDetail",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDetailRequest"
+              },
+              "examples": {
+                "byTaskId": {
+                  "summary": "Get task by ID",
+                  "value": {
+                    "taskid": "420206"
+                  }
+                },
+                "byTaskToken": {
+                  "summary": "Get task by token",
+                  "value": {
+                    "tasktoken": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+                  }
+                },
+                "byTaskIdWithUuid": {
+                  "summary": "Get task by ID with UUID",
+                  "value": {
+                    "taskid": "420206",
+                    "uuid": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDetailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                },
+                "example": {
+                  "total": "1",
+                  "errors": [],
+                  "tasklist": [
+                    {
+                      "id": "420206",
+                      "uuid": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4",
+                      "socketaccesstoken": "qMmK1O5VEpM6iD86siXvoxZCginGFl",
+                      "parameters": {
+                        "voice": "marin",
+                        "system_instructions": "You are a helpful voice assistant."
+                      },
+                      "status": "task_postprocess_end",
+                      "starttime": "1770686437",
+                      "endtime": "1770686482",
+                      "elapsedseconds": "50.0000",
+                      "outputs": [],
+                      "size": "0"
+                    }
+                  ],
+                  "result": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid signature or API key"
+          }
+        }
+      }
+    },
+    "/Task/Kill": {
+      "post": {
+        "summary": "Kill Running Task",
+        "description": "Forcefully terminate a running task.",
+        "operationId": "killTask",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskKillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task killed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Task/Cancel": {
+      "post": {
+        "summary": "Cancel Queued Task",
+        "description": "Cancel a task that is still in the queue (not yet started).",
+        "operationId": "cancelTask",
+        "tags": [
+          "Task Management"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskCancelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task cancelled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Run/PixVerse/text-to-video-v5": {
+      "post": {
+        "summary": "Run text-to-video-v5",
+        "description": "Use the PixVerse V5 API for fast text to video generation with simple integration and clear pricing. Create high quality videos with stable motion, sharp details, and accurate prompt control.\n\n**Processing Time:** 200 seconds",
+        "operationId": "runtexttovideov5",
+        "tags": [
+          "Run Task"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunToolSchema"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/RunToolSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunTaskResponse"
+                },
+                "example": {
+                  "errors": [],
+                  "taskid": "2221",
+                  "socketaccesstoken": "eDcCm5yyUfIvMFspTwww49OUfgXkQt",
+                  "result": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters"
+          },
+          "401": {
+            "description": "Unauthorized - Invalid signature or API key"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
+      }
+    },
+    "schemas": {
+      "RunTaskResponse": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "boolean",
+            "description": "Indicates if the request was successful",
+            "example": true
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "List of error messages (empty on success)",
+            "example": []
+          },
+          "taskid": {
+            "type": "string",
+            "description": "Unique task identifier for polling status",
+            "example": "420206"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Token for WebSocket connection or alternative task lookup",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          }
+        }
+      },
+      "TaskKillRequest": {
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID to kill",
+            "example": "420206"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Socket access token (alternative to taskid)",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          }
+        },
+        "description": "Provide either taskid or socketaccesstoken to identify the task"
+      },
+      "TaskCancelRequest": {
+        "type": "object",
+        "required": [
+          "taskid"
+        ],
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID to cancel (must be in queue)",
+            "example": "420206"
+          }
+        }
+      },
+      "TaskDetailRequest": {
+        "type": "object",
+        "properties": {
+          "taskid": {
+            "type": "string",
+            "description": "Task ID returned from Run endpoint",
+            "example": "420206"
+          },
+          "tasktoken": {
+            "type": "string",
+            "description": "Socket access token (alternative to taskid)",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User UUID (optional). Use 'me' for current user or specific UUID for admin access",
+            "example": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+          }
+        },
+        "description": "Provide either taskid or tasktoken to identify the task"
+      },
+      "TaskDetailResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "string",
+            "description": "Total number of tasks returned",
+            "example": "1"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "List of error messages (empty on success)",
+            "example": []
+          },
+          "tasklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskObject"
+            },
+            "description": "Array of task objects"
+          },
+          "result": {
+            "type": "boolean",
+            "description": "Indicates if the request was successful",
+            "example": true
+          }
+        }
+      },
+      "TaskObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Task ID",
+            "example": "420206"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User unique identifier",
+            "example": "86ae3c1d-edd1-4c2e-ba19-d1a3a23eeca4"
+          },
+          "socketaccesstoken": {
+            "type": "string",
+            "description": "Socket access token for WebSocket connections",
+            "example": "qMmK1O5VEpM6iD86siXvoxZCginGFl"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "Input parameters used for this task",
+            "additionalProperties": true
+          },
+          "debugoutput": {
+            "type": "string",
+            "description": "Debug output from task execution"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current task status",
+            "enum": [
+              "task_queue",
+              "task_accept",
+              "task_assign",
+              "task_preprocess_start",
+              "task_preprocess_end",
+              "task_start",
+              "task_output",
+              "task_postprocess_end",
+              "task_cancel"
+            ],
+            "example": "task_postprocess_end"
+          },
+          "starttime": {
+            "type": "string",
+            "description": "Unix timestamp when task started",
+            "example": "1770686437"
+          },
+          "endtime": {
+            "type": "string",
+            "description": "Unix timestamp when task ended",
+            "example": "1770686482"
+          },
+          "elapsedseconds": {
+            "type": "string",
+            "description": "Total elapsed time in seconds",
+            "example": "50.0000"
+          },
+          "createtime": {
+            "type": "string",
+            "description": "Unix timestamp when task was created",
+            "example": "1770686431"
+          },
+          "canceltime": {
+            "type": "string",
+            "description": "Unix timestamp when task was cancelled",
+            "example": "0"
+          },
+          "assigntime": {
+            "type": "string",
+            "description": "Unix timestamp when task was assigned to worker",
+            "example": "1770686433"
+          },
+          "accepttime": {
+            "type": "string",
+            "description": "Unix timestamp when task was accepted",
+            "example": "1770686432"
+          },
+          "preprocessstarttime": {
+            "type": "string",
+            "description": "Unix timestamp when preprocessing started",
+            "example": "1770686432"
+          },
+          "preprocessendtime": {
+            "type": "string",
+            "description": "Unix timestamp when preprocessing ended",
+            "example": "1770686433"
+          },
+          "postprocessstarttime": {
+            "type": "string",
+            "description": "Unix timestamp when postprocessing started",
+            "example": "1770686482"
+          },
+          "postprocessendtime": {
+            "type": "string",
+            "description": "Unix timestamp when postprocessing ended",
+            "example": "1770686483"
+          },
+          "cps": {
+            "type": "string",
+            "description": "Cost per second",
+            "example": "0.000950000000"
+          },
+          "totalcost": {
+            "type": "string",
+            "description": "Total cost of the task",
+            "example": "0.046841600000"
+          },
+          "guestid": {
+            "type": "string",
+            "description": "Guest ID if task was run by guest user"
+          },
+          "projectid": {
+            "type": "string",
+            "description": "Project ID associated with the task",
+            "example": "0"
+          },
+          "modelid": {
+            "type": "string",
+            "description": "Model ID used for the task",
+            "example": "1656"
+          },
+          "basemodelid": {
+            "type": "string",
+            "description": "Base model ID",
+            "example": "0"
+          },
+          "runtype": {
+            "type": "string",
+            "description": "Type of run (e.g., model, base)",
+            "example": "model"
+          },
+          "modelfolderid": {
+            "type": "string",
+            "description": "Model folder ID"
+          },
+          "modelfileid": {
+            "type": "string",
+            "description": "Model file ID"
+          },
+          "callbackurl": {
+            "type": "string",
+            "description": "Callback URL for task completion webhook"
+          },
+          "marketplaceid": {
+            "type": "string",
+            "description": "Marketplace ID if applicable"
+          },
+          "pexit": {
+            "type": "string",
+            "description": "Process exit code",
+            "example": "0"
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Task categories",
+            "example": [
+              "tool",
+              "partner",
+              "price-list",
+              "realtime"
+            ]
+          },
+          "estimatedvram": {
+            "type": "string",
+            "description": "Estimated VRAM usage",
+            "example": "0.0000"
+          },
+          "realvram": {
+            "type": "string",
+            "description": "Actual VRAM usage (JSON string)",
+            "example": "[]"
+          },
+          "isapp": {
+            "type": "boolean",
+            "description": "Whether task is from an app",
+            "example": false
+          },
+          "slugapp": {
+            "type": "string",
+            "description": "App slug if isapp is true"
+          },
+          "dynamicprice": {
+            "type": "string",
+            "description": "Dynamic pricing configuration (JSON string)"
+          },
+          "outputs": {
+            "type": "array",
+            "description": "Output files generated by the task",
+            "items": {
+              "$ref": "#/components/schemas/OutputFile"
+            }
+          },
+          "size": {
+            "type": "string",
+            "description": "Total output size in bytes",
+            "example": "0"
+          },
+          "modeldescription": {
+            "type": "string",
+            "description": "Description of the model used",
+            "example": "gpt-realtime"
+          },
+          "modelslugowner": {
+            "type": "string",
+            "description": "Owner slug of the model",
+            "example": "openai"
+          },
+          "modelslugproject": {
+            "type": "string",
+            "description": "Project slug of the model",
+            "example": "gpt-realtime"
+          }
+        }
+      },
+      "OutputFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "File ID",
+            "example": "6bc392c93856dfce3a7d1b4261e15af3"
+          },
+          "name": {
+            "type": "string",
+            "description": "File name",
+            "example": "output.mp4"
+          },
+          "contenttype": {
+            "type": "string",
+            "description": "MIME type",
+            "example": "video/mp4"
+          },
+          "size": {
+            "type": "string",
+            "description": "File size in bytes",
+            "example": "202472"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "CDN URL to download the output file",
+            "example": "https://cdn1.wiro.ai/6a6af820-xxxx/output.mp4"
+          },
+          "accesskey": {
+            "type": "string",
+            "description": "Access key for file",
+            "example": "dFKlMApaSgMeHKsJyaDeKrefcHahUK"
+          }
+        }
+      },
+      "RunToolSchema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "title": "prompt",
+            "description": "The prompt to generate the video.",
+            "type": "string",
+            "default": "A dynamic, storybook-style illustration of a whimsical race between a rabbit and a turtle. The scene is set on a winding dirt path through a lush, green forest on a sunny day. The rabbit, looking over its shoulder with a cocky grin, with dust kicking up from its feet. It's wearing small, cartoonish sneakers. The turtle, determined and focused, is moving steadily forward, its shell gleaming in the sunlight. Other forest animals like squirrels and hedgehogs are on the sidelines cheering. The overall mood is lighthearted and fun, captured with bright, cheerful colors and a sense of motion."
+          },
+          "negativePrompt": {
+            "title": "Negative Prompt",
+            "description": "Specify what to exclude from the output.",
+            "type": "string"
+          },
+          "aspectRatio": {
+            "title": "Aspect Ratio",
+            "description": "Sets the width-to-height ratio of the output",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "16:9",
+            "enum": [
+              "16:9",
+              "4:3",
+              "1:1",
+              "3:4",
+              "9:16"
+            ],
+            "x-options": [
+              {
+                "value": "16:9",
+                "label": "16:9"
+              },
+              {
+                "value": "4:3",
+                "label": "4:3"
+              },
+              {
+                "value": "1:1",
+                "label": "1:1"
+              },
+              {
+                "value": "3:4",
+                "label": "3:4"
+              },
+              {
+                "value": "9:16",
+                "label": "9:16"
+              }
+            ]
+          },
+          "duration": {
+            "title": "Duration",
+            "description": "v3.5 only allows 5,8. 1080p does not support 8s",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "5",
+            "enum": [
+              "5",
+              "8"
+            ],
+            "x-options": [
+              {
+                "value": "5",
+                "label": "5"
+              },
+              {
+                "value": "8",
+                "label": "8"
+              }
+            ]
+          },
+          "quality": {
+            "title": "Quality",
+            "description": "Quality of the video",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "540p",
+            "enum": [
+              "360p",
+              "540p",
+              "720p",
+              "1080p"
+            ],
+            "x-options": [
+              {
+                "value": "360p",
+                "label": "360p(Turbo)"
+              },
+              {
+                "value": "540p",
+                "label": "540p"
+              },
+              {
+                "value": "720p",
+                "label": "720p"
+              },
+              {
+                "value": "1080p",
+                "label": "1080p"
+              }
+            ]
+          },
+          "style": {
+            "title": "Style",
+            "description": "You can leave style empty.",
+            "type": "string",
+            "x-input-type": "select",
+            "enum": [
+              "anime",
+              "3d_animation",
+              "clay",
+              "comic",
+              "cyberpunk"
+            ],
+            "x-options": [
+              {
+                "value": "anime",
+                "label": "anime"
+              },
+              {
+                "value": "3d_animation",
+                "label": "3d_animation"
+              },
+              {
+                "value": "clay",
+                "label": "clay"
+              },
+              {
+                "value": "comic",
+                "label": "comic"
+              },
+              {
+                "value": "cyberpunk",
+                "label": "cyberpunk"
+              }
+            ]
+          },
+          "seed": {
+            "title": "seed",
+            "description": "Leave null to randomize",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "default": 0
+          },
+          "Watermark": {
+            "title": "Watermark",
+            "description": "Watermark",
+            "type": "string",
+            "x-input-type": "select",
+            "default": "false",
+            "enum": [
+              "false",
+              "true"
+            ],
+            "x-options": [
+              {
+                "value": "false",
+                "label": "false"
+              },
+              {
+                "value": "true",
+                "label": "true"
+              }
+            ]
+          },
+          "callbackUrl": {
+            "type": "string",
+            "format": "uri",
+            "title": "Callback URL",
+            "description": "Optional webhook URL. Wiro will send a POST request to this URL when the task is completed."
+          }
+        },
+        "required": [
+          "prompt",
+          "aspectRatio",
+          "duration",
+          "quality"
+        ]
+      }
+    }
+  },
+  "x-task-status-info": {
+    "description": "Task status values and their meanings",
+    "completed_statuses": {
+      "description": "Terminal states - stop polling when received",
+      "values": [
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
+      ]
+    },
+    "running_statuses": {
+      "description": "In-progress states - continue polling",
+      "values": [
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
+      ]
+    }
+  }
+}

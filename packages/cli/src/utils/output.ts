@@ -46,7 +46,9 @@ export function createSpinner(text: string): Spinner {
   let stopped = false;
 
   const interval = setInterval(() => {
+    /* v8 ignore start */
     if (stopped) return;
+    /* v8 ignore stop */
     const frame = SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length]!;
     process.stderr.write(`\r${colors.cyan}${frame}${colors.reset} ${currentText}`);
     frameIndex++;

@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "google/gemini-3-flash API (API Key Auth)",
-    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nSimple API key authentication. Include your API key in the `x-api-key` header.\n\n```bash\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: YOUR_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
+    "title": "Wan-AI/Wan2.2-Animate-Replace API (Signature Auth)",
+    "description": "API for running tasks and retrieving task details and status.\n\n## Authentication\nHMAC-SHA256 signature authentication using three headers:\n- `x-api-key`: Your API key from Wiro dashboard\n- `x-nonce`: Unix timestamp or any random integer\n- `x-signature`: HMAC-SHA256 hash of (API_SECRET + NONCE) using API_KEY\n\n### Signature Generation (Bash)\n```bash\nexport YOUR_API_KEY=\"your-api-key\"\nexport YOUR_API_SECRET=\"your-api-secret\"\nexport NONCE=$(date +%s)\nexport SIGNATURE=$(echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\")\n\ncurl -X POST \"https://api.wiro.ai/v1/Task/Detail\" \\\n  -H \"x-api-key: ${YOUR_API_KEY}\" \\\n  -H \"x-nonce: ${NONCE}\" \\\n  -H \"x-signature: ${SIGNATURE}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"taskid\": \"420206\"}'\n```",
     "version": "1.0.0",
     "contact": {
       "name": "Wiro AI",
@@ -22,12 +22,14 @@
     },
     {
       "name": "Task Management",
-      "description": "Monitor, cancel and kill tasks"
+      "description": "Monitor, cancel, and kill tasks"
     }
   ],
   "security": [
     {
-      "ApiKeyAuth": []
+      "ApiKeyAuth": [],
+      "NonceAuth": [],
+      "SignatureAuth": []
     }
   ],
   "paths": {
@@ -112,7 +114,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -129,11 +131,6 @@
           "required": true,
           "content": {
             "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskKillRequest"
-              }
-            },
-            "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TaskKillRequest"
               }
@@ -169,11 +166,6 @@
               "schema": {
                 "$ref": "#/components/schemas/TaskCancelRequest"
               }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TaskCancelRequest"
-              }
             }
           }
         },
@@ -191,11 +183,11 @@
         }
       }
     },
-    "/Run/google/gemini-3-flash": {
+    "/Run/Wan-AI/Wan2.2-Animate-Replace": {
       "post": {
-        "summary": "Run gemini-3-flash",
-        "description": "gemini-3-flash\n\n**Processing Time:** 10 seconds",
-        "operationId": "rungemini3flash",
+        "summary": "Run Wan2.2 Animate Replace",
+        "description": "Transform images into animated videos using the Wan2.2 Animate Replace model. Generate dynamic video content from static reference images and driving videos.\n\n**Processing Time:** 50 seconds",
+        "operationId": "runWan2.2AnimateReplace",
         "tags": [
           "Run Task"
         ],
@@ -235,7 +227,7 @@
             "description": "Invalid request parameters"
           },
           "401": {
-            "description": "Unauthorized - Invalid or missing API key"
+            "description": "Unauthorized - Invalid signature or API key"
           }
         }
       }
@@ -247,7 +239,21 @@
         "type": "apiKey",
         "in": "header",
         "name": "x-api-key",
-        "description": "Your API key from Wiro dashboard. Get it at https://wiro.ai/dashboard"
+        "description": "Your API key from Wiro dashboard"
+      },
+      "NonceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-nonce",
+        "description": "Unix timestamp (seconds since epoch) or any random integer. Example: 1738800000",
+        "x-example": "1738800000",
+        "x-format": "timestamp"
+      },
+      "SignatureAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-signature",
+        "description": "HMAC-SHA256 hash: echo -n \"${YOUR_API_SECRET}${NONCE}\" | openssl dgst -sha256 -hmac \"${YOUR_API_KEY}\""
       }
     },
     "schemas": {
@@ -634,85 +640,81 @@
       "RunToolSchema": {
         "type": "object",
         "properties": {
-          "inputAll": {
-            "title": "input files",
-            "description": "Optional. Multiple files separated by semicolon. Supports images, videos, and audio.",
+          "inputImage": {
+            "title": "Input Image",
+            "description": "Reference character image",
             "type": "string",
             "format": "uri",
             "x-input-type": "combinefileinput",
-            "x-label": "input files",
-            "x-help": "Optional. Multiple files separated by semicolon. Supports images, videos, and audio."
+            "x-label": "Input Image",
+            "x-help": "Reference character image"
           },
-          "prompt": {
-            "title": "prompt",
-            "description": "Required.",
+          "inputVideo": {
+            "title": "Video",
+            "description": "Input driving video - the motion source",
             "type": "string",
-            "default": "Tell me about Türkiye"
+            "format": "uri",
+            "x-input-type": "combinefileinput",
+            "x-label": "Video",
+            "x-help": "Input driving video - the motion source"
           },
-          "user_id": {
-            "title": "user ID",
-            "description": "Required for chat history. Numeric or string ID.",
-            "type": "string"
-          },
-          "session_id": {
-            "title": "session ID",
-            "description": "Required for chat history. Numeric or string ID.",
-            "type": "string"
-          },
-          "systemInstructions": {
-            "title": "system instructions",
-            "description": "Optional. System-level instructions for the model.",
-            "type": "string"
-          },
-          "thinkingLevel": {
-            "title": "thinking level",
-            "description": "Optional",
+          "resolution": {
+            "title": "resolution",
+            "description": "Resolution.",
             "type": "string",
             "x-input-type": "select",
-            "default": "low",
+            "default": "default",
             "enum": [
-              "minimal",
-              "low",
-              "medium",
-              "high"
+              "default",
+              "480p",
+              "580p",
+              "720p"
             ],
             "x-options": [
               {
-                "value": "minimal",
-                "label": "minimal"
+                "value": "default",
+                "label": "Default"
               },
               {
-                "value": "low",
-                "label": "low"
+                "value": "480p",
+                "label": "480P"
               },
               {
-                "value": "medium",
-                "label": "medium"
+                "value": "580p",
+                "label": "580P"
               },
               {
-                "value": "high",
-                "label": "high"
+                "value": "720p",
+                "label": "720P"
               }
             ]
           },
-          "temperature": {
-            "title": "temperature",
-            "description": "Optional. Controls randomness. Range: 0.0-2.0",
-            "type": "string"
-          },
-          "topP": {
-            "title": "top P",
-            "description": "Optional. Nucleus sampling. Range: 0.0-1.0",
-            "type": "string"
-          },
-          "maxOutputTokens": {
-            "title": "max output tokens",
-            "description": "Optional. Maximum response length. Range: 1-65536",
+          "steps": {
+            "title": "inferencesteps",
+            "description": "inferencesteps-help",
             "type": "number",
             "minimum": 1,
-            "maximum": 65536,
-            "default": 65536,
+            "maximum": 500,
+            "default": 20,
             "multipleOf": 1
+          },
+          "scale": {
+            "title": "guidancescale",
+            "description": "guidancescale-help",
+            "type": "string"
+          },
+          "shift": {
+            "title": "Shift",
+            "description": "Noise schedule shift parameter",
+            "type": "string"
+          },
+          "seed": {
+            "title": "seed",
+            "description": "seed-help",
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 9999999999,
+            "default": "0"
           },
           "callbackUrl": {
             "type": "string",
@@ -722,7 +724,12 @@
           }
         },
         "required": [
-          "prompt"
+          "inputImage",
+          "inputVideo",
+          "steps",
+          "scale",
+          "shift",
+          "seed"
         ]
       }
     }
@@ -732,20 +739,47 @@
     "completed_statuses": {
       "description": "Terminal states - stop polling when received",
       "values": [
-        "task_postprocess_end",
-        "task_cancel"
+        {
+          "status": "task_postprocess_end",
+          "description": "Task completed successfully and post-processing is done"
+        },
+        {
+          "status": "task_cancel",
+          "description": "Task was cancelled by the user or system"
+        }
       ]
     },
     "running_statuses": {
       "description": "In-progress states - continue polling",
       "values": [
-        "task_queue",
-        "task_accept",
-        "task_assign",
-        "task_preprocess_start",
-        "task_preprocess_end",
-        "task_start",
-        "task_output"
+        {
+          "status": "task_queue",
+          "description": "Task is waiting in the queue"
+        },
+        {
+          "status": "task_accept",
+          "description": "Task has been accepted for processing"
+        },
+        {
+          "status": "task_assign",
+          "description": "Task is being assigned to a worker"
+        },
+        {
+          "status": "task_preprocess_start",
+          "description": "Preprocessing is starting"
+        },
+        {
+          "status": "task_preprocess_end",
+          "description": "Preprocessing is complete"
+        },
+        {
+          "status": "task_start",
+          "description": "Task execution has started"
+        },
+        {
+          "status": "task_output",
+          "description": "Output is being generated"
+        }
       ]
     }
   }
