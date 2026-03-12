@@ -10,31 +10,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### @wiroai/sdk
-- 58 pre-bundled OpenAPI model specs (text-to-image, text-to-video, image-to-video, LLM, speech, 3D, OCR)
-- Expanded `KNOWN_MODELS` registry with all available Wiro AI models
-- Auto-fetch and cache model specs via `ModelRegistry.ensureSpec()`
-- `generateModelHelp()` — formatted help output for any model (quick reference, MCP usage, CLI usage)
+- 58 pre-bundled OpenAPI model specs across 10 categories (text-to-image, text-to-video, image-to-video, image-editing, LLM, translation, speech, talking-head, 3D, OCR)
+- Expanded `KNOWN_MODELS` registry from 7 to 58 models with proper categorization
+- Auto-fetch and cache model specs via `ModelRegistry.ensureSpec()` — unknown models are discovered on first use
+- `generateModelHelp()` — formatted help output with quick reference, MCP usage examples, and CLI usage
 - `parseOpenApiSpec()` — robust OpenAPI 3.0.3 spec parser with enum, default, and description extraction
+- Comprehensive test suite: 257 tests across 14 test files with 100% code coverage
 
 #### @wiroai/cli
-- `wiro info` now auto-fetches specs from API when not cached locally
-- Improved `wiro run` with parameter validation against OpenAPI specs
+- `wiro info` now auto-fetches specs from API when model is not cached locally
+- `wiro run` validates parameters against OpenAPI specs before submission
 - Enhanced terminal output utilities (tables, spinners, colored output)
 
 #### @wiroai/mcp-server
-- `wiro_run_model` now validates parameters against OpenAPI specs before submission
+- `wiro_run_model` validates parameters against OpenAPI specs before submission
 - `wiro_model_info` auto-fetches and caches specs on demand
-- `wiro_fetch_spec` tool for manual spec download
-- HTTP/SSE transport support alongside stdio
-- Formatted task results with output file URLs and metadata
+- `wiro_fetch_spec` tool for manual spec download with formatted output
+- HTTP/SSE transport support alongside stdio (set `TRANSPORT=http`)
+- Formatted task results with output file URLs, sizes, and metadata
 
 ### Changed
 - All packages now exclude test files from TypeScript build output
-- Improved error messages with actionable guidance
+- Improved error messages with actionable guidance across all packages
 
 ### Fixed
-- TypeScript build errors caused by test files in compilation output
+- TypeScript build errors caused by test files included in compilation output
 - WebSocket reconnection handling in task monitoring
+
+## [1.0.1] - 2026-03-11
+
+### Changed
+- Bump all package versions to 1.0.1
+- Updated README with package scoping, badges, and improved documentation structure
+- Renamed SDK package from `@wiro/sdk` to `@wiroai/sdk`
 
 ## [1.0.0] - 2026-03-11
 
@@ -45,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `runModel()` — run any AI model on Wiro AI
 - `getTaskDetail()` / `getTaskDetailById()` — check task status
 - `waitForTask()` — poll until task completion
-- `connectTaskWebSocket()` — real-time task monitoring
+- `connectTaskWebSocket()` — real-time task monitoring via WebSocket
 - `killTask()` / `cancelTask()` — task lifecycle management
 - `fetchModelSpec()` — download OpenAPI specs from Wiro API
 - `ModelRegistry` — OpenAPI spec parser with parameter validation
@@ -54,9 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full TypeScript types for all API responses
 
 #### @wiroai/cli
-- `wiro run <model>` — run AI models with parameter support
+- `wiro run <model>` — run AI models with full parameter support
 - `wiro models` — list available models with category filtering
-- `wiro info <model>` — show model parameters and defaults
+- `wiro info <model>` — show model parameters, types, defaults, and examples
 - `wiro fetch-spec <model>` — download model OpenAPI spec
 - `wiro status <token>` — check task status
 - `wiro watch <token>` — real-time task monitoring via WebSocket
@@ -66,13 +74,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Colored terminal output with spinners and tables
 
 #### @wiroai/mcp-server
-- 9 MCP tools for AI assistant integration
-- `wiro_run_model` — run models with parameter validation
-- `wiro_list_models` — browse available models
-- `wiro_model_info` — inspect model parameters
-- `wiro_fetch_spec` — download model specs on demand
-- `wiro_task_status` / `wiro_task_wait` — task monitoring
-- `wiro_task_kill` / `wiro_task_cancel` — task management
-- `wiro_list_categories` — model category listing
+- 9 MCP tools for AI assistant integration:
+  - `wiro_run_model` — run models with parameter validation
+  - `wiro_list_models` — browse available models
+  - `wiro_model_info` — inspect model parameters
+  - `wiro_fetch_spec` — download model specs on demand
+  - `wiro_task_status` / `wiro_task_wait` — task monitoring
+  - `wiro_task_kill` / `wiro_task_cancel` — task management
+  - `wiro_list_categories` — model category listing
 - stdio and HTTP/SSE transport support
 - Compatible with Claude Desktop, Cursor, Windsurf, and other MCP clients
